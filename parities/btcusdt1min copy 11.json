@@ -1,5 +1,6 @@
 {
     "symbol": "MATICUSDT",
     "interval": "1m",
-    "start": "15 minutes ago UTC"
+    "start": "15 minutes ago UTC",
+    "is_parity_active": false
 }
