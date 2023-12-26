@@ -1,0 +1,10 @@
+{
+    "is_parity_active": true,
+    "symbol": "ARBUSDT",
+    "interval": "4h",
+    "start": "60 minutes ago UTC",
+    "rsi": true,
+    "lower_rsi_bounds": [30,20],
+    "upper_rsi_bounds": [80],
+    "rsi_states": ["h1","n","l1","l2"]
+}

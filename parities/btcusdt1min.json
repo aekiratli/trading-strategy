@@ -1,9 +1,0 @@
-{
-    "is_parity_active": true,
-    "symbol": "BTCUSDT",
-    "interval": "5m",
-    "start": "700 hours ago UTC",
-    "rsi": true,
-    "lower_rsi_bounds": [30,15,60],
-    "upper_rsi_bounds": [80,62]
-}
