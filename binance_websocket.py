@@ -29,13 +29,18 @@ class NpEncoder(json.JSONEncoder):
         return super(NpEncoder, self).default(obj)
 
 # Function to send a message to a Telegram user or group using aoidhttp
-async def telegram_bot_sendtext(bot_message):
+async def telegram_bot_sendtext(symbol, interval, is_increasing, value):
+
+    if is_increasing:
+        msg = f"🟩🟩📈 RSI is increasing for *{symbol} - {interval} - RSI = {value}* 📈🟩🟩"
+    else:
+        msg = f"🟥🟥📉 RSI is decreasing for *{symbol} - {interval} - RSI = {value}* 📉🟥🟥"
+
     bot_token = TELEGRAM_KEY
     bot_chatID = CHAT_ID
-    send_text = 'https://api.telegram.org/bot' + bot_token + '/sendMessage?chat_id=' + bot_chatID + '&parse_mode=Markdown&text=' + bot_message
+    send_text = 'https://api.telegram.org/bot' + bot_token + '/sendMessage?chat_id=' + bot_chatID + '&parse_mode=Markdown&text=' + msg
     async with aiohttp.ClientSession() as session:
         async with session.get(send_text) as resp:
-            print(resp.status)
             print(await resp.text())
 
 
@@ -54,7 +59,6 @@ def update_state_file(file_name, state, state_value):
         with open(state_file_path, 'w') as state_file:
             json.dump(data, state_file, indent=2, cls=NpEncoder)
 
-        print(f'State "{state}" updated successfully in {file_name}_state.json.')
 
     except FileNotFoundError:
         # Handle the case where the file doesn't exist
@@ -83,38 +87,33 @@ def read_state_file(file_name) -> dict:
         return state
     
 def calculate_rsi_states(parity):
-    # add lower and upper bounds to the state file
     bounds = parity['lower_rsi_bounds'] + parity['upper_rsi_bounds']
     bounds_keys = parity["rsi_states"]
     bounds = sorted(bounds, reverse=True)
-    print("sorted bounds", bounds)
+    # print(bounds) [50, 45, 40, 35, 30]
+    # print(bounds_keys) ['h2', 'h1', 'n', 'l1', 'l2']
     # create dict corresponding to the bounds with rsi_states
-    rsi_states = {}
-    bound_index = 0
-    for bound in bounds:
-        if bound_index == 0:
-            rsi_states.update({bounds_keys[bound_index]: bound})
-        elif bound_index == len(bounds):
-            print("last bound", bound)
-            rsi_states.update({bounds_keys[bound_index]: bound})
-        else:
-            rsi_states.update({bounds_keys[bound_index]: [bound, bounds[bound_index]]})
-        bound_index += 1
+    # e.g -> 51 is h2, 46 is h1, 41 is n, 36 is l1, 29 is l2
+    rsi_states = dict(zip(bounds_keys, bounds))
+    # add the last key to the dict using array index
+    rsi_states.update({bounds_keys[-1]: 0})
     return rsi_states
 
+
 def calculate_rsi_state(rsi, rsi_states) -> str:
-    state_count = 0
-    for state in rsi_states:
-        if type(rsi_states[state]) == list:
-            if rsi > rsi_states[state][0] and rsi < rsi_states[state][1]:
-                return state
-        elif state_count == 0:
-            if rsi > rsi_states[state]:
-                return state
-        else:
-            if rsi < rsi_states[state]:
-                return state
-        state_count += 1
+    # example rsi_states -> {'h2': 50, 'h1': 45, 'n': 40, 'l1': 35, 'l2': 30, 'l3': 0}
+    # find the first key that is greater than the rsi
+    # e.g -> rsi = 51, rsi_state = h2
+    # e.g -> rsi = 46, rsi_state = h1
+    # e.g -> rsi = 41, rsi_state = n
+    # e.g -> rsi = 36, rsi_state = l1
+    # e.g -> rsi = 29, rsi_state = l2
+    # e.g -> rsi = 0, rsi_state = l3
+    for key, value in rsi_states.items():
+        if rsi >= value:
+            print(f"rsi -> {rsi}, rsi_state -> {key}, rsi_states -> {rsi_states}")
+            return key
+
 
 def initialize_parities() -> list:
     parities_path = './parities'
@@ -142,17 +141,15 @@ def get_candles(symbol, interval, start) -> pd.DataFrame:
     df = pd.DataFrame(klines, columns=['open_time', 'open', 'high', 'low', 'close', 'volume', 'close_time', 'quote_asset_volume', 'number_of_trades', 'taker_buy_base_asset_volume', 'taker_buy_quote_asset_volume', 'ignore'])
     return df
 
-async def main(df, parity, task_id, file_name, state, rsi_states, is_open_time_updated):
+async def main(df, parity, task_id, file_name, state, rsi_states):
     # check if open_time attribute exists
     if hasattr(state, 'open_time'):
-        is_open_time_updated = True
         pass
     else:
         # add open_time to state dict
         state.update({"open_time": df.iloc[-1]['open_time']})
         # write to state file
         update_state_file(file_name, 'open_time', df.iloc[-1]['open_time'])
-        is_open_time_updated = True
 
     SYMBOL = parity['symbol']
     INTERVAL = parity['interval']
@@ -190,17 +187,23 @@ async def main(df, parity, task_id, file_name, state, rsi_states, is_open_time_u
                 if state['rsi'] != rsi_state:
                     # check if the open_time has been updated
                     if state["open_time"] != df.iloc[-1]['open_time']:
+                        print("open_time updated")
                         # update the open_time
                         state["open_time"] = df.iloc[-1]['open_time']
                         # update the state file
                         update_state_file(file_name, 'rsi', rsi_state)
                         # update the state
                         state["rsi"] = rsi_state
+                        # check if state starts with h
+                        if rsi_state.startswith('h'):
+                            is_increasing = True
+                        else:
+                            is_increasing = False
                         # send telegram message including symbol interval and rsi
-                        await telegram_bot_sendtext(f"rsi -> {rsi.iloc[-1]}, symbol -> {parity['symbol']}, interval -> {parity['interval']}, state -> {rsi_state}")
-                        print("state is changed")
-                print(f"rsi -> {rsi.iloc[-1]}, symbol -> {parity['symbol']}, state -> {rsi_state}", "rsi_states -> ", rsi_states)
-
+                        await telegram_bot_sendtext(parity["symbol"], parity["interval"], is_increasing, int(rsi.iloc[-1]))
+                    else:
+                        print("open_time not updated")
+                    
 
 async def run_parities():
 
@@ -211,30 +214,15 @@ async def run_parities():
     task_id = 0
     for parity in parities:
         if parity['is_parity_active'] == True:
-            is_open_time_updated = False
             rsi_states = calculate_rsi_states(parity)
             state = read_state_file(file_names[task_id])
             df = get_candles(parity['symbol'], parity['interval'], parity['start'])
-            tasks.append(main(df, parity, task_id, file_names[task_id], state,rsi_states, is_open_time_updated))        
+            tasks.append(main(df, parity, task_id, file_names[task_id], state,rsi_states))        
         task_id += 1
     # Run tasks concurrently
     await asyncio.gather(*tasks)
     
 if __name__ == "__main__":
-    # loop = asyncio.get_event_loop()
-    # loop.run_until_complete(run_parities())
-    parity= {
-        "is_parity_active": True,
-        "symbol": "BTCUSDT",
-        "interval": "1m",
-        "start": "60 minutes ago UTC",
-        "rsi": False,
-        "lower_rsi_bounds": [30,35,40],
-        "upper_rsi_bounds": [45,50],
-        "rsi_states": ["h2","h1","n","l1","l2","l3"]
-    }
-    value = 1
-    rsi_states = calculate_rsi_states(parity)
-    rsi_state = calculate_rsi_state(1, rsi_states)
-    print(rsi_states, rsi_state , value)
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(run_parities())
 

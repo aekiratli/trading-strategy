@@ -1,5 +1,5 @@
 {
-    "is_parity_active": true,
+    "is_parity_active": false,
     "symbol": "BTCUSDT",
     "interval": "5m",
     "start": "60 minutes ago UTC",
