@@ -111,7 +111,6 @@ def calculate_rsi_state(rsi, rsi_states) -> str:
     # e.g -> rsi = 0, rsi_state = l3
     for key, value in rsi_states.items():
         if rsi >= value:
-            print(f"rsi -> {rsi}, rsi_state -> {key}, rsi_states -> {rsi_states}")
             return key
 
 
@@ -147,9 +146,9 @@ async def main(df, parity, task_id, file_name, state, rsi_states):
         pass
     else:
         # add open_time to state dict
-        state.update({"open_time": df.iloc[-1]['open_time']})
+        state.update({"open_time": df.iloc[-2]['open_time']})
         # write to state file
-        update_state_file(file_name, 'open_time', df.iloc[-1]['open_time'])
+        update_state_file(file_name, 'open_time', df.iloc[-2]['open_time'])
 
     SYMBOL = parity['symbol']
     INTERVAL = parity['interval']
@@ -163,7 +162,6 @@ async def main(df, parity, task_id, file_name, state, rsi_states):
         while True:
             msg_counter += 1
             res = await tscm.recv()
-            # logging.info("msg recieved: {}".format(msg_counter))
             if res['k']['x']:
                 # candle is closed, concat new candle to df
                 new_candle_data = [res['k']['t'], res['k']['o'], res['k']['h'], res['k']['l'], res['k']['c'], res['k']['v'], res['k']['T'], res['k']['q'], res['k']['n'], res['k']['V'], res['k']['Q'], res['k']['B']]
@@ -181,13 +179,12 @@ async def main(df, parity, task_id, file_name, state, rsi_states):
                 df.loc[df.index[-1]] = [res['k']['t'], res['k']['o'], res['k']['h'], res['k']['l'], res['k']['c'], res['k']['v'], res['k']['T'], res['k']['q'], res['k']['n'], res['k']['V'], res['k']['Q'], res['k']['B']]
             if  parity['rsi'] == True:
                 rsi = talib.RSI(df['close'], timeperiod=14)
-                # logging.info(f"rsi -> {rsi.iloc[-1]}, symbol -> {parity['symbol']}")
                 # check if the state is the same as the current state
                 rsi_state = calculate_rsi_state(rsi.iloc[-1], rsi_states)
                 if state['rsi'] != rsi_state:
+                    logging.info(f"rsi_state -> {rsi_state}, symbol -> {parity['symbol']}, interval -> {parity['interval']}, rsi -> {int(rsi.iloc[-1])}")
                     # check if the open_time has been updated
                     if state["open_time"] != df.iloc[-1]['open_time']:
-                        print("open_time updated")
                         # update the open_time
                         state["open_time"] = df.iloc[-1]['open_time']
                         # update the state file
@@ -200,9 +197,9 @@ async def main(df, parity, task_id, file_name, state, rsi_states):
                         else:
                             is_increasing = False
                         # send telegram message including symbol interval and rsi
-                        await telegram_bot_sendtext(parity["symbol"], parity["interval"], is_increasing, int(rsi.iloc[-1]))
-                    else:
-                        print("open_time not updated")
+                        # send message if rsi_state is not n
+                        if rsi_state != 'n':
+                            await telegram_bot_sendtext(parity["symbol"], parity["interval"], is_increasing, int(rsi.iloc[-1]))
                     
 
 async def run_parities():
@@ -219,6 +216,10 @@ async def run_parities():
             df = get_candles(parity['symbol'], parity['interval'], parity['start'])
             tasks.append(main(df, parity, task_id, file_names[task_id], state,rsi_states))        
         task_id += 1
+    send_text = 'https://api.telegram.org/bot' + TELEGRAM_KEY + '/sendMessage?chat_id=' + CHAT_ID + '&parse_mode=Markdown&text=' + "Bot is running"
+    async with aiohttp.ClientSession() as session:
+        async with session.get(send_text) as resp:
+            print(await resp.text())
     # Run tasks concurrently
     await asyncio.gather(*tasks)
     

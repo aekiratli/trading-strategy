@@ -1,8 +1,8 @@
 {
-    "is_parity_active": false,
+    "is_parity_active": true,
     "symbol": "BTCUSDT",
     "interval": "4h",
-    "start": "60 minutes ago UTC",
+    "start": "120 hours ago UTC",
     "rsi": true,
     "lower_rsi_bounds": [30,20],
     "upper_rsi_bounds": [80],

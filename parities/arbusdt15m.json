@@ -1,8 +1,8 @@
 {
-    "is_parity_active": false,
+    "is_parity_active": true,
     "symbol": "ARBUSDT",
     "interval": "15m",
-    "start": "60 minutes ago UTC",
+    "start": "12 hours ago UTC",
     "rsi": true,
     "lower_rsi_bounds": [30,20],
     "upper_rsi_bounds": [80],
