@@ -8,6 +8,8 @@ import talib
 import logging
 import numpy as np
 import aiohttp
+from pmax import calculate_pmax
+
 # library to .env file
 from dotenv import load_dotenv
 load_dotenv()
@@ -203,6 +205,9 @@ async def main(df, parity, task_id, file_name, state, rsi_states):
                         if rsi_state != 'n':
                             await telegram_bot_sendtext(parity["symbol"], parity["interval"], is_increasing, int(rsi.iloc[-1]))
                     
+            if parity["pmax"] == True:
+                pmax = calculate_pmax(df.close.rolling(10).mean(), df['close'], df['high'], df['low'], 10, 3)
+                print("pmax", pmax)
 
 async def run_parities():
 
@@ -219,9 +224,9 @@ async def run_parities():
             tasks.append(main(df, parity, task_id, file_names[task_id], state,rsi_states))        
         task_id += 1
     send_text = 'https://api.telegram.org/bot' + TELEGRAM_KEY + '/sendMessage?chat_id=' + CHAT_ID + '&parse_mode=Markdown&text=' + "Bot is running"
-    async with aiohttp.ClientSession() as session:
-        async with session.get(send_text) as resp:
-            print(await resp.text())
+    # async with aiohttp.ClientSession() as session:
+    #     async with session.get(send_text) as resp:
+    #         print(await resp.text())
     # Run tasks concurrently
     await asyncio.gather(*tasks)
     

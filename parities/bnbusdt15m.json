@@ -1,10 +1,11 @@
 {
-    "is_parity_active": true,
+    "is_parity_active": false,
     "symbol": "BNBUSDT",
     "interval": "15m",
     "start": "12 hours ago UTC",
     "rsi": true,
     "lower_rsi_bounds": [30,20],
     "upper_rsi_bounds": [80],
-    "rsi_states": ["h1","n","l1","l2"]
+    "rsi_states": ["h1","n","l1","l2"],
+"pmax": true
 }

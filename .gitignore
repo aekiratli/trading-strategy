@@ -10,6 +10,9 @@ __pycache__/
 data.csv
 .data_settings
 
+# state
+state/
+
 # Distribution / packaging
 .Python
 build/
