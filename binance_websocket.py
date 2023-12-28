@@ -14,6 +14,9 @@ load_dotenv()
 
 TELEGRAM_KEY = os.getenv("TELEGRAM_KEY")
 CHAT_ID = os.getenv("CHAT_ID")
+PARITIES_PATH = os.getenv("PARITIES_PATH")
+STATE_PATH = os.getenv("STATE_PATH")
+
 # Configure the logging module
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 client = Client("","")
@@ -45,7 +48,7 @@ async def telegram_bot_sendtext(symbol, interval, is_increasing, value):
 
 
 def update_state_file(file_name, state, state_value):
-    state_file_path = f'./state/{file_name}_state.json'
+    state_file_path = f'{STATE_PATH}/{file_name}_state.json'
 
     try:
         # Read the existing state file
@@ -71,17 +74,17 @@ def update_state_file(file_name, state, state_value):
         
 def initialize_state_files(file_names):
     # create state directory if it doesn't exist
-    if not os.path.exists('./state'):
-        os.makedirs('./state')
+    if not os.path.exists(STATE_PATH):
+        os.makedirs(STATE_PATH)
     # create state file if it doesn't exist
     for file_name in file_names:
-        state_file_path = f'./state/{file_name}_state.json'
+        state_file_path = f'{STATE_PATH}/{file_name}_state.json'
         if not os.path.exists(state_file_path):
             with open(state_file_path, 'w') as state_file:
                 json.dump({"rsi": "n"}, state_file)
 
 def read_state_file(file_name) -> dict:
-    state_file_path = f'./state/{file_name}_state.json'
+    state_file_path = f'{STATE_PATH}/{file_name}_state.json'
     with open(state_file_path, 'r') as state_file:
         state = json.load(state_file)
         return state
@@ -115,9 +118,8 @@ def calculate_rsi_state(rsi, rsi_states) -> str:
 
 
 def initialize_parities() -> list:
-    parities_path = './parities'
     # Get the list of files in the directory
-    files = os.listdir(parities_path)
+    files = os.listdir(PARITIES_PATH)
 
     # Filter only JSON files
     parities = []
@@ -126,7 +128,7 @@ def initialize_parities() -> list:
 
     # Import and process each JSON file
     for json_file in json_files:
-        file_path = os.path.join(parities_path, json_file)
+        file_path = os.path.join(PARITIES_PATH, json_file)
         # remove .json from file name
         file_names.append(json_file[:-5])
 
