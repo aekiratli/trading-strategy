@@ -145,14 +145,14 @@ def get_candles(symbol, interval, start) -> pd.DataFrame:
     return df
 
 async def main(df, parity, task_id, file_name, state, rsi_states):
-    # check if open_time attribute exists
-    if hasattr(state, 'open_time'):
+    # check if rsi_open_time attribute exists
+    if hasattr(state, 'rsi_open_time'):
         pass
     else:
-        # add open_time to state dict
-        state.update({"open_time": df.iloc[-2]['open_time']})
+        # add rsi_open_time to state dict
+        state.update({"rsi_open_time": df.iloc[-2]['open_time']})
         # write to state file
-        update_state_file(file_name, 'open_time', df.iloc[-2]['open_time'])
+        update_state_file(file_name, 'rsi_open_time', df.iloc[-2]['open_time'])
 
     SYMBOL = parity['symbol']
     INTERVAL = parity['interval']
@@ -168,6 +168,7 @@ async def main(df, parity, task_id, file_name, state, rsi_states):
             res = await tscm.recv()
             if res['k']['x']:
                 # candle is closed, concat new candle to df
+                print(f"msg_counter -> {msg_counter}, symbol -> {parity['symbol']}, interval -> {parity['interval']}")
                 new_candle_data = [res['k']['t'], res['k']['o'], res['k']['h'], res['k']['l'], res['k']['c'], res['k']['v'], res['k']['T'], res['k']['q'], res['k']['n'], res['k']['V'], res['k']['Q'], res['k']['B']]
                 new_candle = pd.DataFrame([new_candle_data], columns=['open_time', 'open', 'high', 'low', 'close', 'volume', 'close_time', 'quote_asset_volume', 'number_of_trades', 'taker_buy_base_asset_volume', 'taker_buy_quote_asset_volume', 'ignore'])
                 
@@ -187,10 +188,10 @@ async def main(df, parity, task_id, file_name, state, rsi_states):
                 rsi_state = calculate_rsi_state(rsi.iloc[-1], rsi_states)
                 if state['rsi'] != rsi_state:
                     logging.info(f"rsi_state -> {rsi_state}, symbol -> {parity['symbol']}, interval -> {parity['interval']}, rsi -> {int(rsi.iloc[-1])}")
-                    # check if the open_time has been updated
-                    if state["open_time"] != df.iloc[-1]['open_time']:
-                        # update the open_time
-                        state["open_time"] = df.iloc[-1]['open_time']
+                    # check if the rsi_open_time has been updated
+                    if state["rsi_open_time"] != df.iloc[-1]['open_time']:
+                        # update the rsi_open_time
+                        state["rsi_open_time"] = df.iloc[-1]['open_time']
                         # update the state file
                         update_state_file(file_name, 'rsi', rsi_state)
                         # update the state
@@ -204,10 +205,27 @@ async def main(df, parity, task_id, file_name, state, rsi_states):
                         # send message if rsi_state is not n
                         if rsi_state != 'n':
                             await telegram_bot_sendtext(parity["symbol"], parity["interval"], is_increasing, int(rsi.iloc[-1]))
-                    
             if parity["pmax"] == True:
-                pmax = calculate_pmax(df.close.rolling(10).mean(), df['close'], df['high'], df['low'], 10, 3)
-                print("pmax", pmax)
+                if parity["moving_average"] == "sma":
+                    ma = df['close'].ewm(span=parity["ma_length"], adjust=False).mean()
+                else:
+                    ma = df.close.rolling(parity["ma_length"]).mean()
+
+                pmax = calculate_pmax(ma, df['close'], df['high'], df['low'], parity["atr_length"], parity["atr_multiplier"])
+      
+                # ensure last element of pmax and lsat element of close is float, do not change array, create new float varaible
+                
+                pmax = float(pmax[-1])
+                close = float(df.iloc[-1]['close'])
+                print(f"pmax -> {pmax}, close -> {close}")
+                # check if price is lower than pmax
+                if close < pmax:
+                    print("lower state")
+                # check if price is higher %5 than pmax
+                elif pmax < close * 0.80:
+                    print("percantage state")
+                else:
+                    print("normal state")
 
 async def run_parities():
 

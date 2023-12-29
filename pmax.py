@@ -3,11 +3,6 @@ import numpy as np
 import math
 import pandas as pd
 
-def moving_average(x, n, type='simple'):
-    # use talib
-    return ta.SMA(x, n)
-
-
 def calculate_pmax(var_array, close_array, high_array, low_array, atr_period, atr_multiplier):
 
     try:
