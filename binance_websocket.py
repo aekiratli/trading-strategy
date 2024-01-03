@@ -211,7 +211,7 @@ async def main(df, parity, task_id, file_name, state, rsi_states):
                             await telegram_bot_sendtext(msg)
 
             if parity["pmax"] == True:
-                if parity["moving_average"] == "sma":
+                if parity["moving_average"] == "ema":
                     ma = df['close'].ewm(span=parity["ma_length"], adjust=False).mean()
                 else:
                     ma = df.close.rolling(parity["ma_length"]).mean()
@@ -219,29 +219,31 @@ async def main(df, parity, task_id, file_name, state, rsi_states):
                 pmax = calculate_pmax(ma, df['close'], df['high'], df['low'], parity["atr_length"], parity["atr_multiplier"])                
                 pmax = float(pmax[-1])
                 close = float(df.iloc[-1]['close'])
-                # check if price is lower than pmax
-                if close < pmax:
-                    pmax_state = "l"
-                # check if price is higher %xxx than pmax
-                elif pmax < close < pmax * parity['pmax_percantage']:
-                    pmax_state = "p"
-                else:
-                    pmax_state = "n"
-                if state['pmax'] != pmax_state:
-                    if state["pmax_open_time"] != df.iloc[-1]['open_time']:
-                        logging.info(f"pmax_state -> {pmax_state}, symbol -> {parity['symbol']}, interval -> {parity['interval']}, pmax -> {int(pmax)}")
-                        # update the rsi_open_time
-                        state["pmax_open_time"] = df.iloc[-1]['open_time']
-                        # update the state file
-                        update_state_file(file_name, 'pmax', pmax_state)
-                        # update the state
-                        state["pmax"] = pmax_state
-                        if pmax_state != 'n':
-                            if pmax_state == 'p':
-                                msg = f"🟨🟨🟨 PMAX is close to price *{parity['symbol']} - {parity['interval']} - PMAX = {int(pmax)}*  🟨🟨🟨"
-                            if pmax_state == 'l':
-                                msg = f"🟪🟪🟪 PMAX is lower than price *{parity['symbol']} - {parity['interval']} - PMAX = {int(pmax)}* 🟪🟪🟪"
-                            await telegram_bot_sendtext(msg)
+                # check if pmax is lower than ma
+                if pmax < ma.iloc[-1]:
+                    # check if price is lower than pmax
+                    if close < pmax:
+                        pmax_state = "l"
+                    # check if price is higher %xxx than pmax
+                    elif pmax < close < pmax * parity['pmax_percantage']:
+                        pmax_state = "p"
+                    else:
+                        pmax_state = "n"
+                    if state['pmax'] != pmax_state:
+                        if state["pmax_open_time"] != df.iloc[-1]['open_time']:
+                            logging.info(f"pmax_state -> {pmax_state}, symbol -> {parity['symbol']}, interval -> {parity['interval']}, pmax -> {pmax}")
+                            # update the rsi_open_time
+                            state["pmax_open_time"] = df.iloc[-1]['open_time']
+                            # update the state file
+                            update_state_file(file_name, 'pmax', pmax_state)
+                            # update the state
+                            state["pmax"] = pmax_state
+                            if pmax_state != 'n':
+                                if pmax_state == 'p':
+                                    msg = f"🟨🟨🟨 PMAX is close to price *{parity['symbol']} - {parity['interval']} - PMAX = {pmax}*  🟨🟨🟨"
+                                if pmax_state == 'l':
+                                    msg = f"🟪🟪🟪 PMAX is lower than price *{parity['symbol']} - {parity['interval']} - PMAX = {pmax}* 🟪🟪🟪"
+                                await telegram_bot_sendtext(msg)
 
 
 async def run_parities():
