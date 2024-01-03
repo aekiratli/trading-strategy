@@ -34,12 +34,7 @@ class NpEncoder(json.JSONEncoder):
         return super(NpEncoder, self).default(obj)
 
 # Function to send a message to a Telegram user or group using aoidhttp
-async def telegram_bot_sendtext(symbol, interval, is_increasing, value):
-
-    if is_increasing:
-        msg = f"🟩🟩📈 RSI is increasing for *{symbol} - {interval} - RSI = {value}* 📈🟩🟩"
-    else:
-        msg = f"🟥🟥📉 RSI is decreasing for *{symbol} - {interval} - RSI = {value}* 📉🟥🟥"
+async def telegram_bot_sendtext(msg):
 
     bot_token = TELEGRAM_KEY
     bot_chatID = CHAT_ID
@@ -154,6 +149,15 @@ async def main(df, parity, task_id, file_name, state, rsi_states):
         # write to state file
         update_state_file(file_name, 'rsi_open_time', df.iloc[-2]['open_time'])
 
+    # check if pmax_open_time attribute exists
+    if hasattr(state, 'pmax_open_time'):
+        pass
+    else:
+        # add pmax_open_time to state dict
+        state.update({"pmax_open_time": df.iloc[-2]['open_time']})
+        # write to state file
+        update_state_file(file_name, 'pmax_open_time', df.iloc[-2]['open_time'])
+
     SYMBOL = parity['symbol']
     INTERVAL = parity['interval']
     client = await AsyncClient.create()
@@ -168,7 +172,6 @@ async def main(df, parity, task_id, file_name, state, rsi_states):
             res = await tscm.recv()
             if res['k']['x']:
                 # candle is closed, concat new candle to df
-                print(f"msg_counter -> {msg_counter}, symbol -> {parity['symbol']}, interval -> {parity['interval']}")
                 new_candle_data = [res['k']['t'], res['k']['o'], res['k']['h'], res['k']['l'], res['k']['c'], res['k']['v'], res['k']['T'], res['k']['q'], res['k']['n'], res['k']['V'], res['k']['Q'], res['k']['B']]
                 new_candle = pd.DataFrame([new_candle_data], columns=['open_time', 'open', 'high', 'low', 'close', 'volume', 'close_time', 'quote_asset_volume', 'number_of_trades', 'taker_buy_base_asset_volume', 'taker_buy_quote_asset_volume', 'ignore'])
                 
@@ -196,36 +199,48 @@ async def main(df, parity, task_id, file_name, state, rsi_states):
                         update_state_file(file_name, 'rsi', rsi_state)
                         # update the state
                         state["rsi"] = rsi_state
-                        # check if state starts with h
-                        if rsi_state.startswith('h'):
-                            is_increasing = True
-                        else:
-                            is_increasing = False
-                        # send telegram message including symbol interval and rsi
                         # send message if rsi_state is not n
                         if rsi_state != 'n':
-                            await telegram_bot_sendtext(parity["symbol"], parity["interval"], is_increasing, int(rsi.iloc[-1]))
+                            # check if state starts with h
+                            if rsi_state.startswith('h'):
+                                msg = f"🟩🟩📈 RSI is increasing for *{parity['symbol']} - {parity['interval']} - RSI = {int(rsi.iloc[-1])}* 📈🟩🟩"
+                            else:
+                                msg = f"🟥🟥📉  RSI is decreasing for *{parity['symbol']} - {parity['interval']} - RSI = {int(rsi.iloc[-1])}* 🟥🟥📉"
+                            await telegram_bot_sendtext(msg)
+
             if parity["pmax"] == True:
                 if parity["moving_average"] == "sma":
                     ma = df['close'].ewm(span=parity["ma_length"], adjust=False).mean()
                 else:
                     ma = df.close.rolling(parity["ma_length"]).mean()
 
-                pmax = calculate_pmax(ma, df['close'], df['high'], df['low'], parity["atr_length"], parity["atr_multiplier"])
-      
-                # ensure last element of pmax and lsat element of close is float, do not change array, create new float varaible
-                
+                pmax = calculate_pmax(ma, df['close'], df['high'], df['low'], parity["atr_length"], parity["atr_multiplier"])                
                 pmax = float(pmax[-1])
                 close = float(df.iloc[-1]['close'])
-                print(f"pmax -> {pmax}, close -> {close}")
                 # check if price is lower than pmax
                 if close < pmax:
-                    print("lower state")
-                # check if price is higher %5 than pmax
-                elif pmax < close * 0.80:
-                    print("percantage state")
+                    pmax_state = "l"
+                # check if price is higher %xxx than pmax
+                elif pmax < close < pmax * parity['pmax_percantage']:
+                    pmax_state = "p"
                 else:
-                    print("normal state")
+                    pmax_state = "n"
+
+                if state["pmax_open_time"] != df.iloc[-1]['open_time']:
+                    logging.info(f"pmax_state -> {pmax_state}, symbol -> {parity['symbol']}, interval -> {parity['interval']}, pmax -> {int(pmax)}")
+                    # update the rsi_open_time
+                    state["pmax_open_time"] = df.iloc[-1]['open_time']
+                    # update the state file
+                    update_state_file(file_name, 'pmax', pmax_state)
+                    # update the state
+                    state["pmax"] = pmax_state
+                    if pmax_state != 'n':
+                        if pmax_state == 'p':
+                            msg = f"🟨🟨🟨 PMAX is close to price *{parity['symbol']} - {parity['interval']} - PMAX = {int(pmax)}*  🟨🟨🟨"
+                        if pmax_state == 'l':
+                            msg = f"🟪🟪🟪 PMAX is lower than price *{parity['symbol']} - {parity['interval']} - PMAX = {int(pmax)}* 🟪🟪🟪"
+                        await telegram_bot_sendtext(msg)
+
 
 async def run_parities():
 
@@ -242,9 +257,9 @@ async def run_parities():
             tasks.append(main(df, parity, task_id, file_names[task_id], state,rsi_states))        
         task_id += 1
     send_text = 'https://api.telegram.org/bot' + TELEGRAM_KEY + '/sendMessage?chat_id=' + CHAT_ID + '&parse_mode=Markdown&text=' + "Bot is running"
-    # async with aiohttp.ClientSession() as session:
-    #     async with session.get(send_text) as resp:
-    #         print(await resp.text())
+    async with aiohttp.ClientSession() as session:
+        async with session.get(send_text) as resp:
+            print(await resp.text())
     # Run tasks concurrently
     await asyncio.gather(*tasks)
     
