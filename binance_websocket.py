@@ -71,6 +71,8 @@ def update_state_file(file_name, state, state_value):
         
 def initialize_state_files(file_names):
     # create state directory if it doesn't exist
+    data = {"rsi": "n", "pmax": "n"}
+
     if not os.path.exists(STATE_PATH):
         os.makedirs(STATE_PATH)
     # create state file if it doesn't exist
@@ -78,7 +80,7 @@ def initialize_state_files(file_names):
         state_file_path = f'{STATE_PATH}/{file_name}_state.json'
         if not os.path.exists(state_file_path):
             with open(state_file_path, 'w') as state_file:
-                json.dump({"rsi": "n"}, state_file)
+                json.dump(data, state_file, indent=2)
 
 def read_state_file(file_name) -> dict:
     state_file_path = f'{STATE_PATH}/{file_name}_state.json'
