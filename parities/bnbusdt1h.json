@@ -1,5 +1,5 @@
 {
-    "is_parity_active": false,
+    "is_parity_active": true,
     "symbol": "BNBUSDT",
     "interval": "1h",
     "start": "30 hours ago UTC",
@@ -7,5 +7,11 @@
     "lower_rsi_bounds": [30,20],
     "upper_rsi_bounds": [80],
     "rsi_states": ["h1","n","l1","l2"],
-"pmax": true
+    "pmax": true,
+    "atr_multiplier": 3,
+    "moving_average": "sma",
+    "atr_length": 9,
+    "ma_length": 9,
+    "pmax_states": ["l", "p", "n"],
+    "pmax_percantage": 1.02
 }

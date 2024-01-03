@@ -3,7 +3,7 @@
     "symbol": "BNBUSDT",
     "interval": "4h",
     "start": "240 hours ago UTC",
-    "rsi": false,
+    "rsi": true,
     "lower_rsi_bounds": [30,20],
     "upper_rsi_bounds": [80],
     "rsi_states": ["h1","n","l1","l2"],
@@ -12,6 +12,6 @@
     "moving_average": "sma",
     "atr_length": 9,
     "ma_length": 9,
-    "pmax_states": ["lower", "closer", "normal"],
-    "pmax_percantage": 1.05
+    "pmax_states": ["l", "p", "n"],
+    "pmax_percantage": 1.04
 }
