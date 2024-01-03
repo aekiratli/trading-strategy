@@ -225,21 +225,21 @@ async def main(df, parity, task_id, file_name, state, rsi_states):
                     pmax_state = "p"
                 else:
                     pmax_state = "n"
-
-                if state["pmax_open_time"] != df.iloc[-1]['open_time']:
-                    logging.info(f"pmax_state -> {pmax_state}, symbol -> {parity['symbol']}, interval -> {parity['interval']}, pmax -> {int(pmax)}")
-                    # update the rsi_open_time
-                    state["pmax_open_time"] = df.iloc[-1]['open_time']
-                    # update the state file
-                    update_state_file(file_name, 'pmax', pmax_state)
-                    # update the state
-                    state["pmax"] = pmax_state
-                    if pmax_state != 'n':
-                        if pmax_state == 'p':
-                            msg = f"🟨🟨🟨 PMAX is close to price *{parity['symbol']} - {parity['interval']} - PMAX = {int(pmax)}*  🟨🟨🟨"
-                        if pmax_state == 'l':
-                            msg = f"🟪🟪🟪 PMAX is lower than price *{parity['symbol']} - {parity['interval']} - PMAX = {int(pmax)}* 🟪🟪🟪"
-                        await telegram_bot_sendtext(msg)
+                if state['pmax'] != pmax_state:
+                    if state["pmax_open_time"] != df.iloc[-1]['open_time']:
+                        logging.info(f"pmax_state -> {pmax_state}, symbol -> {parity['symbol']}, interval -> {parity['interval']}, pmax -> {int(pmax)}")
+                        # update the rsi_open_time
+                        state["pmax_open_time"] = df.iloc[-1]['open_time']
+                        # update the state file
+                        update_state_file(file_name, 'pmax', pmax_state)
+                        # update the state
+                        state["pmax"] = pmax_state
+                        if pmax_state != 'n':
+                            if pmax_state == 'p':
+                                msg = f"🟨🟨🟨 PMAX is close to price *{parity['symbol']} - {parity['interval']} - PMAX = {int(pmax)}*  🟨🟨🟨"
+                            if pmax_state == 'l':
+                                msg = f"🟪🟪🟪 PMAX is lower than price *{parity['symbol']} - {parity['interval']} - PMAX = {int(pmax)}* 🟪🟪🟪"
+                            await telegram_bot_sendtext(msg)
 
 
 async def run_parities():
