@@ -71,7 +71,7 @@ def update_state_file(file_name, state, state_value):
         
 def initialize_state_files(file_names):
     # create state directory if it doesn't exist
-    data = {"rsi": "n", "pmax": "n"}
+    data = {"rsi": "n", "pmax": "n", "bbands": "n"}
 
     if not os.path.exists(STATE_PATH):
         os.makedirs(STATE_PATH)
@@ -159,6 +159,14 @@ async def main(df, parity, task_id, file_name, state, rsi_states):
         state.update({"pmax_open_time": df.iloc[-2]['open_time']})
         # write to state file
         update_state_file(file_name, 'pmax_open_time', df.iloc[-2]['open_time'])
+    # check if bbands_open_time attribute exists
+    if hasattr(state, 'bbands_open_time'):
+        pass
+    else:
+        # add bbands_open_time to state dict
+        state.update({"bbands_open_time": df.iloc[-2]['open_time']})
+        # write to state file
+        update_state_file(file_name, 'bbands_open_time', df.iloc[-2]['open_time'])
 
     SYMBOL = parity['symbol']
     INTERVAL = parity['interval']
@@ -249,6 +257,25 @@ async def main(df, parity, task_id, file_name, state, rsi_states):
                                 if pmax_state == 'l':
                                     msg = f"🟪🟪🟪 PMAX is lower than price *{parity['symbol']} - {parity['interval']} - PMAX = {pmax}* 🟪🟪🟪"
                                 await telegram_bot_sendtext(msg)
+            # calculate bolinger bands
+            if parity["bbands"] == True:
+                # calculate bolinger bands
+                upperband, middleband, lowerband = talib.BBANDS(df['close'], timeperiod=20, nbdevup=3, nbdevdn=3, matype=0)
+                #check if price is lower than lowerband
+                if np.float64(df.iloc[-1]['close']) < lowerband.iloc[-1]:
+                    bbands_state = "l"
+                else:
+                    bbands_state = "n"
+                if state['bbands'] != bbands_state:
+                    if state["bbands_open_time"] != df.iloc[-1]['open_time']:
+                        logging.info(f"bbands_state -> {bbands_state}, symbol -> {parity['symbol']}, interval -> {parity['interval']}, lowerband -> {lowerband.iloc[-1]}, close -> {df.iloc[-1]['close']}")
+                        # update the state file
+                        update_state_file(file_name, 'bbands', bbands_state)
+                        # update the state
+                        state["bbands"] = bbands_state
+                        if bbands_state == 'l':
+                            msg = f"🟥🟥📉 Price is lower than Bollinger Band *{parity['symbol']} - {parity['interval']} - Price = {df.iloc[-1]['close']} - Lower Band = {lowerband.iloc[-1]} * 🟥🟥📉"
+                            await telegram_bot_sendtext(msg)
 
 
 async def run_parities():

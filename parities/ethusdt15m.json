@@ -8,6 +8,7 @@
     "upper_rsi_bounds": [80],
     "rsi_states": ["h1","n","l1","l2"],
     "pmax": false,
+    "bbands": true,
     "atr_multiplier": 3,
     "moving_average": "sma",
     "atr_length": 10,
