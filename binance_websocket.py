@@ -168,9 +168,7 @@ async def main(df, parity, task_id, file_name, state, rsi_states):
     ts = bm.kline_socket(SYMBOL, interval=INTERVAL)
     # then start receiving messages
     async with ts as tscm:
-        msg_counter = 0
         while True:
-            msg_counter += 1
             res = await tscm.recv()
             if res['k']['x']:
                 # candle is closed, concat new candle to df
@@ -211,7 +209,7 @@ async def main(df, parity, task_id, file_name, state, rsi_states):
                             await telegram_bot_sendtext(msg)
 
             if parity["pmax"] == True:
-                if parity["moving_average"] == "sma":
+                if parity["moving_average"] == "ema":
                     ma = df['close'].ewm(span=parity["ma_length"], adjust=False).mean()
                 else:
                     ma = df.close.rolling(parity["ma_length"]).mean()
@@ -230,6 +228,7 @@ async def main(df, parity, task_id, file_name, state, rsi_states):
                     else:
                         pmax_state = "n"
                     if state['pmax'] != pmax_state:
+                        # if state["pmax_open_time"] != df.iloc[-1]['open_time']:
                         if state['pmax'] == 'l' and pmax_state == 'p':
                             state["pmax_open_time"] = df.iloc[-1]['open_time']
                             # update the state file
@@ -237,7 +236,6 @@ async def main(df, parity, task_id, file_name, state, rsi_states):
                             # update the state
                             state["pmax"] = pmax_state
                         else:
-                            # if state["pmax_open_time"] != df.iloc[-1]['open_time']:
                             logging.info(f"pmax_state -> {pmax_state}, symbol -> {parity['symbol']}, interval -> {parity['interval']}, pmax -> {pmax}, ma -> {ma.iloc[-1]}, close -> {close}")
                             # update the rsi_open_time
                             state["pmax_open_time"] = df.iloc[-1]['open_time']
