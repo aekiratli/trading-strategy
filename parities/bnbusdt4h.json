@@ -9,7 +9,7 @@
     "rsi_states": ["h1","n","l1","l2"],
     "pmax": true,
     "atr_multiplier": 3,
-    "moving_average": "ema",
+    "moving_average": "sma",
     "atr_length": 10,
     "ma_length": 9,
     "pmax_states": ["l", "p", "n"],
