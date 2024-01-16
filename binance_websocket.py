@@ -185,11 +185,12 @@ async def main(df, parity, task_id, file_name, state, rsi_states):
                 
                 # Ensure the columns are in the same order and correct data types
                 new_candle = new_candle.astype(df.dtypes)
-
-                df = pd.concat([df, new_candle], ignore_index=True)
                 # remove first candle
                 df = df.iloc[1:]
-                # calculate RSI using talib
+                # reassign indexes
+                df.index = range(len(df))
+                df = pd.concat([df, new_candle], ignore_index=True)
+
             else:
                 # candle is open, update last candle
                 df.loc[df.index[-1]] = [res['k']['t'], res['k']['o'], res['k']['h'], res['k']['l'], res['k']['c'], res['k']['v'], res['k']['T'], res['k']['q'], res['k']['n'], res['k']['V'], res['k']['Q'], res['k']['B']]
