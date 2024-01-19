@@ -9,6 +9,7 @@ import logging
 import numpy as np
 import aiohttp
 from pmax import calculate_pmax
+from technical.indicators import PMAX
 
 # library to .env file
 from dotenv import load_dotenv
@@ -218,16 +219,15 @@ async def main(df, parity, task_id, file_name, state, rsi_states):
                             await telegram_bot_sendtext(msg)
 
             if parity["pmax"] == True:
-                if parity["moving_average"] == "ema":
-                    ma = df['close'].ewm(span=parity["ma_length"], adjust=False).mean()
-                else:
-                    ma = df.close.rolling(parity["ma_length"]).mean()
 
-                pmax = calculate_pmax(ma, df['close'], df['high'], df['low'], parity["atr_length"], parity["atr_multiplier"])                
-                pmax = float(pmax[-1])
+                df['high'] = df['high'].astype(float)
+                df['low'] = df['low'].astype(float)
+                df['close'] = df['close'].astype(float)
+                pmax_df = (PMAX(df, src=2))
+                pmax = float(pmax_df.iloc[-1,-2])
                 close = float(df.iloc[-1]['close'])
                 # check if pmax is lower than ma
-                if pmax < ma.iloc[-1]:
+                if pmax_df.iloc[-1,-1] == "up":
                     # check if price is lower than pmax
                     if close < pmax:
                         pmax_state = "l"
@@ -245,7 +245,7 @@ async def main(df, parity, task_id, file_name, state, rsi_states):
                             # update the state
                             state["pmax"] = pmax_state
                         else:
-                            logging.info(f"pmax_state -> {pmax_state}, symbol -> {parity['symbol']}, interval -> {parity['interval']}, pmax -> {pmax}, ma -> {ma.iloc[-1]}, close -> {close}")
+                            logging.info(f"pmax_state -> {pmax_state}, symbol -> {parity['symbol']}, interval -> {parity['interval']}, pmax -> {pmax}, ma -> {pmax_df.iloc[-1,-3]}, close -> {close}")
                             # update the rsi_open_time
                             state["pmax_open_time"] = df.iloc[-1]['open_time']
                             # update the state file
@@ -293,10 +293,10 @@ async def run_parities():
             df = get_candles(parity['symbol'], parity['interval'], parity['start'])
             tasks.append(main(df, parity, task_id, file_names[task_id], state,rsi_states))        
         task_id += 1
-    send_text = 'https://api.telegram.org/bot' + TELEGRAM_KEY + '/sendMessage?chat_id=' + CHAT_ID + '&parse_mode=Markdown&text=' + "Bot is running"
-    async with aiohttp.ClientSession() as session:
-        async with session.get(send_text) as resp:
-            print(await resp.text())
+    # send_text = 'https://api.telegram.org/bot' + TELEGRAM_KEY + '/sendMessage?chat_id=' + CHAT_ID + '&parse_mode=Markdown&text=' + "Bot is running"
+    # async with aiohttp.ClientSession() as session:
+    #     async with session.get(send_text) as resp:
+    #         print(await resp.text())
     # Run tasks concurrently
     await asyncio.gather(*tasks)
     
