@@ -14,5 +14,5 @@
     "atr_length": 10,
     "ma_length": 9,
     "pmax_states": ["l", "p", "n"],
-    "pmax_percantage": 1.0033
+    "pmax_percantage": 1.0030
 }
