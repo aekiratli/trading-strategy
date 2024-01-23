@@ -173,7 +173,6 @@ async def main(df, parity, task_id, file_name, state, rsi_states):
         state.update({"bbands_open_time": df.iloc[-2]['open_time']})
         # write to state file
         update_state_file(file_name, 'bbands_open_time', df.iloc[-2]['open_time'])
-    print(state)
     SYMBOL = parity['symbol']
     INTERVAL = parity['interval']
     client = await AsyncClient.create()
@@ -222,43 +221,42 @@ async def main(df, parity, task_id, file_name, state, rsi_states):
                         state["rsi_open_time"] = df.iloc[-1]['open_time']
                         # update the state file
                         update_state_file(file_name, 'rsi', rsi_state)
+                        update_state_file(file_name, 'rsi_open_time', df.iloc[-1]['open_time'])
                         # update the state
                         state["rsi"] = rsi_state
                         # send message if rsi_state is not n
                         if rsi_state != 'n':
                             # check if state starts with h
                             if rsi_state.startswith('h'):
-                                msg = f"🟩🟩📈 RSI is increasing for *{parity['symbol']} - {parity['interval']} - RSI = {int(rsi.iloc[-1])}* 📈🟩🟩"
+                                msg = f"🟩🟩📈  *{parity['symbol']} - {parity['interval']} * - RSI = {int(rsi.iloc[-1])} 📈🟩🟩"
                             else:
-                                msg = f"🟥🟥📉  RSI is decreasing for *{parity['symbol']} - {parity['interval']} - RSI = {int(rsi.iloc[-1])}* 🟥🟥📉"
+                                msg = f"🟥🟥📉  *{parity['symbol']} - {parity['interval']} * - RSI = {int(rsi.iloc[-1])} 🟥🟥📉"
                             await telegram_bot_sendtext(msg)
 
             if parity["pmax"] == True:
+                # add candle open time
                 if calculate_pmax == True:
                     df['high'] = df['high'].astype(float)
                     df['low'] = df['low'].astype(float)
                     df['close'] = df['close'].astype(float)
                     pmax_df = PMAX(df, length=9, MAtype=4, src=2)
                     pmax = float(pmax_df.iloc[-1,-2])
-                    close = float(df.iloc[-1]['close'])
+                close = float(df.iloc[-1]['close'])
                 # check buy signal
                 if pmax_df.iloc[-1,-1] == "up":
                     # check if price is lower than pmax
-                    if close < pmax:
+                    if close <= pmax:
                         pmax_state = "l"
                     # check if price is higher %xxx than pmax
-                    elif pmax < close < pmax * parity['pmax_percantage']:
+                    elif pmax <= close < pmax * parity['pmax_percantage']:
                         pmax_state = "p"
                     else:
                         pmax_state = "n"
-                    logging.info(f"pmax_state -> {pmax_state}, symbol -> {parity['symbol']}, interval -> {parity['interval']}, pmax -> {pmax}, ma -> {pmax_df.iloc[-1,-3]}, close -> {close}")
-
                     if state['pmax'] != pmax_state:
-                        print("state changed")
                         if state['pmax'] == 'n' and pmax_state == 'l':
                             if pmax_candle_counter == 0:
                                 logging.info(f"pmax_state -> {pmax_state}, symbol -> {parity['symbol']}, interval -> {parity['interval']}, pmax -> {pmax}, ma -> {pmax_df.iloc[-1,-3]}, close -> {close}")
-                                msg = f"🟨🟨🟨 PMAX is close to price *{parity['symbol']} - {parity['interval']} - PMAX = {pmax}*  🟨🟨🟨"
+                                msg = f"🟪🟪🟪 *{parity['symbol']} - {parity['interval']}* - Price is on PMAX = {int(pmax)} 🟪🟪🟪"
                                 await telegram_bot_sendtext(msg)
                                 is_n_to_l_notif_sent = True
                             elif pmax_candle_counter == 3:
@@ -269,15 +267,25 @@ async def main(df, parity, task_id, file_name, state, rsi_states):
                                 logging.info(f"counter -> {pmax_candle_counter}, pmax_state -> {pmax_state}, symbol -> {parity['symbol']}, interval -> {parity['interval']}, pmax -> {pmax}, ma -> {pmax_df.iloc[-1,-3]}, close -> {close}")
 
                         if state['pmax'] == 'p' and pmax_state == 'l':
-                            logging.info(f"pmax_state -> {pmax_state}, symbol -> {parity['symbol']}, interval -> {parity['interval']}, pmax -> {pmax}, ma -> {pmax_df.iloc[-1,-3]}, close -> {close}")
-                            msg = f"🟪🟪🟪 PMAX is lower than price *{parity['symbol']} - {parity['interval']} - PMAX = {pmax}* 🟪🟪🟪"
-                            await telegram_bot_sendtext(msg)
+                            if pmax_candle_counter == 0:
+                                logging.info(f"pmax_state -> {pmax_state}, symbol -> {parity['symbol']}, interval -> {parity['interval']}, pmax -> {pmax}, ma -> {pmax_df.iloc[-1,-3]}, close -> {close}")
+                                msg = f"🟪🟪🟪 *{parity['symbol']} - {parity['interval']}* - Price is on PMAX = {int(pmax)} 🟪🟪🟪"
+                                await telegram_bot_sendtext(msg)
+                                is_n_to_l_notif_sent = True
+                            elif pmax_candle_counter == 3:
+                                is_n_to_l_notif_sent = False
+                                pmax_candle_counter = 0
+                                logging.info(f"counter rested for -> {pmax_candle_counter}, pmax_state -> {pmax_state}, symbol -> {parity['symbol']}, interval -> {parity['interval']}, pmax -> {pmax}, ma -> {pmax_df.iloc[-1,-3]}, close -> {close}")
+                            else:
+                                logging.info(f"counter -> {pmax_candle_counter}, pmax_state -> {pmax_state}, symbol -> {parity['symbol']}, interval -> {parity['interval']}, pmax -> {pmax}, ma -> {pmax_df.iloc[-1,-3]}, close -> {close}")
+
                         if state['pmax'] == 'n' and pmax_state == 'p':
-                            print("n to l")
-                            logging.info(f"pmax_state -> {pmax_state}, symbol -> {parity['symbol']}, interval -> {parity['interval']}, pmax -> {pmax}, ma -> {pmax_df.iloc[-1,-3]}, close -> {close}")
-                            msg = f"🟪🟪🟪 PMAX is lower than price *{parity['symbol']} - {parity['interval']} - PMAX = {pmax}* 🟪🟪🟪"
-                            await telegram_bot_sendtext(msg)
-                        state["pmax_open_time"] = df.iloc[-1]['open_time']
+                            if state["pmax_open_time"] != df.iloc[-1]['open_time']:
+                                logging.info(f"pmax_state -> {pmax_state}, symbol -> {parity['symbol']}, interval -> {parity['interval']}, pmax -> {pmax}, ma -> {pmax_df.iloc[-1,-3]}, close -> {close}")
+                                msg = f"🟨🟨🟨 *{parity['symbol']} - {parity['interval']}* Price={close} is close to PMAX = {int(pmax)}*  🟨🟨🟨"
+                                state["pmax_open_time"] = df.iloc[-1]['open_time']
+                                update_state_file(file_name, 'pmax_open_time', df.iloc[-1]['open_time'])
+                                await telegram_bot_sendtext(msg)
                         # update the state file
                         update_state_file(file_name, 'pmax', pmax_state)
                         # update the state
@@ -297,12 +305,13 @@ async def main(df, parity, task_id, file_name, state, rsi_states):
                         logging.info(f"bbands_state -> {bbands_state}, symbol -> {parity['symbol']}, interval -> {parity['interval']}, lowerband -> {lowerband.iloc[-1]}, close -> {df.iloc[-1]['close']}")
                         # update the state file
                         update_state_file(file_name, 'bbands', bbands_state)
+                        update_state_file(file_name, 'bbands_open_time', df.iloc[-1]['open_time'])
                         # update the state
                         state["bbands"] = bbands_state
+                        state["bbands_open_time"] = df.iloc[-1]['open_time']
                         if bbands_state == 'l':
-                            msg = f"🟥🟥📉 Price is lower than Bollinger Band *{parity['symbol']} - {parity['interval']} - Price = {df.iloc[-1]['close']} - Lower Band = {lowerband.iloc[-1]} * 🟥🟥📉"
+                            msg = f"🟥🟥📉 *{parity['symbol']} - {parity['interval']}* Price={int(df.iloc[-1]['close'])} is lower than Bollinger Band - Lower Band = {int(lowerband.iloc[-1])} 🟥🟥📉"
                             await telegram_bot_sendtext(msg)
-
 
 async def run_parities():
 
@@ -318,11 +327,11 @@ async def run_parities():
             df = get_candles(parity['symbol'], parity['interval'], parity['start'])
             tasks.append(main(df, parity, task_id, file_names[task_id], state,rsi_states))        
         task_id += 1
-    # send_text = 'https://api.telegram.org/bot' + TELEGRAM_KEY + '/sendMessage?chat_id=' + CHAT_ID + '&parse_mode=Markdown&text=' + "Bot is running"
-    # async with aiohttp.ClientSession() as session:
-    #     async with session.get(send_text) as resp:
-    #         print(await resp.text())
-    # Run tasks concurrently
+    send_text = 'https://api.telegram.org/bot' + TELEGRAM_KEY + '/sendMessage?chat_id=' + CHAT_ID + '&parse_mode=Markdown&text=' + "Bot is running"
+    async with aiohttp.ClientSession() as session:
+        async with session.get(send_text) as resp:
+            print(await resp.text())
+    #Run tasks concurrently
     await asyncio.gather(*tasks)
     
 if __name__ == "__main__":
