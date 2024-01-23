@@ -282,7 +282,7 @@ async def main(df, parity, task_id, file_name, state, rsi_states):
                         if state['pmax'] == 'n' and pmax_state == 'p':
                             if state["pmax_open_time"] != df.iloc[-1]['open_time']:
                                 logging.info(f"pmax_state -> {pmax_state}, symbol -> {parity['symbol']}, interval -> {parity['interval']}, pmax -> {pmax}, ma -> {pmax_df.iloc[-1,-3]}, close -> {close}")
-                                msg = f"🟨🟨🟨 *{parity['symbol']} - {parity['interval']}* Price={close} is close to PMAX = {int(pmax)}*  🟨🟨🟨"
+                                msg = f"🟨🟨🟨 *{parity['symbol']} - {parity['interval']}* Price={close} is close to PMAX = {int(pmax)}  🟨🟨🟨"
                                 state["pmax_open_time"] = df.iloc[-1]['open_time']
                                 update_state_file(file_name, 'pmax_open_time', df.iloc[-1]['open_time'])
                                 await telegram_bot_sendtext(msg)
