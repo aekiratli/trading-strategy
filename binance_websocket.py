@@ -44,7 +44,8 @@ async def telegram_bot_sendtext(msg):
     send_text = 'https://api.telegram.org/bot' + bot_token + '/sendMessage?chat_id=' + bot_chatID + '&parse_mode=Markdown&text=' + msg
     async with aiohttp.ClientSession() as session:
         async with session.get(send_text) as resp:
-            print(await resp.text())
+            pass
+            #print(await resp.text())
 
 
 def update_state_file(file_name, state, state_value):
@@ -254,10 +255,12 @@ async def main(df, parity, task_id, file_name, state, rsi_states):
                     if state['pmax'] != pmax_state:
                         if state['pmax'] == 'n' and pmax_state == 'l':
                             if pmax_candle_counter == 0:
-                                logging.info(f"pmax_state -> {pmax_state}, symbol -> {parity['symbol']}, interval -> {parity['interval']}, pmax -> {pmax}, ma -> {pmax_df.iloc[-1,-3]}, close -> {close}")
+                                logging.info(f"pmax_prev_state -> {state['pmax']}, pmax_state -> {pmax_state}, symbol -> {parity['symbol']}, interval -> {parity['interval']}, pmax -> {pmax}, ma -> {pmax_df.iloc[-1,-3]}, close -> {close}")
                                 msg = f"🟪🟪🟪 *{parity['symbol']} - {parity['interval']}* - Price is on PMAX = {pmax:.2f} 🟪🟪🟪"
                                 await telegram_bot_sendtext(msg)
                                 is_n_to_l_notif_sent = True
+                                update_state_file(file_name, 'pmax', pmax_state)
+
                             elif pmax_candle_counter == 3:
                                 is_n_to_l_notif_sent = False
                                 pmax_candle_counter = 0
@@ -267,10 +270,12 @@ async def main(df, parity, task_id, file_name, state, rsi_states):
 
                         if state['pmax'] == 'p' and pmax_state == 'l':
                             if pmax_candle_counter == 0:
-                                logging.info(f"pmax_state -> {pmax_state}, symbol -> {parity['symbol']}, interval -> {parity['interval']}, pmax -> {pmax}, ma -> {pmax_df.iloc[-1,-3]}, close -> {close}")
+                                logging.info(f"pmax_prev_state -> {state['pmax']}, pmax_state -> {pmax_state}, symbol -> {parity['symbol']}, interval -> {parity['interval']}, pmax -> {pmax}, ma -> {pmax_df.iloc[-1,-3]}, close -> {close}")
                                 msg = f"🟪🟪🟪 *{parity['symbol']} - {parity['interval']}* - Price is on PMAX = {pmax:.2f} 🟪🟪🟪"
                                 await telegram_bot_sendtext(msg)
                                 is_n_to_l_notif_sent = True
+                                update_state_file(file_name, 'pmax', pmax_state)
+
                             elif pmax_candle_counter == 3:
                                 is_n_to_l_notif_sent = False
                                 pmax_candle_counter = 0
@@ -280,11 +285,13 @@ async def main(df, parity, task_id, file_name, state, rsi_states):
 
                         if state['pmax'] == 'n' and pmax_state == 'p':
                             if state["pmax_open_time"] != df.iloc[-1]['open_time']:
-                                logging.info(f"pmax_state -> {pmax_state}, symbol -> {parity['symbol']}, interval -> {parity['interval']}, pmax -> {pmax}, ma -> {pmax_df.iloc[-1,-3]}, close -> {close}")
+                                logging.info(f"pmax_prev_state -> {state['pmax']}, pmax_state -> {pmax_state}, symbol -> {parity['symbol']}, interval -> {parity['interval']}, pmax -> {pmax}, ma -> {pmax_df.iloc[-1,-3]}, close -> {close}")
                                 msg = f"🟨🟨🟨 *{parity['symbol']} - {parity['interval']}* Price = {close:.2f} is close to PMAX = {pmax:.2f}  🟨🟨🟨"
                                 state["pmax_open_time"] = df.iloc[-1]['open_time']
                                 update_state_file(file_name, 'pmax_open_time', df.iloc[-1]['open_time'])
                                 await telegram_bot_sendtext(msg)
+                                update_state_file(file_name, 'pmax', pmax_state)
+
                         # update the state file
                         update_state_file(file_name, 'pmax', pmax_state)
                         # update the state
