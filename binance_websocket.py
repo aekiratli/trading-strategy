@@ -203,7 +203,6 @@ async def main(df, parity, task_id, file_name, state, rsi_states):
                 # candle is open, update last candle
                 df.loc[df.index[-1]] = [res['k']['t'], res['k']['o'], res['k']['h'], res['k']['l'], res['k']['c'], res['k']['v'], res['k']['T'], res['k']['q'], res['k']['n'], res['k']['V'], res['k']['Q'], res['k']['B']]
                 calculate_pmax = False
-
             # pamx related
             if is_first_run == True:
                 calculate_pmax = True
@@ -300,7 +299,6 @@ async def main(df, parity, task_id, file_name, state, rsi_states):
                     bbands_state = "l"
                 else:
                     bbands_state = "n"
-                print(f"{lowerband.iloc[-1]:.2f}")
                 if state['bbands'] != bbands_state:
                     if state["bbands_open_time"] != df.iloc[-1]['open_time']:
                         logging.info(f"bbands_state -> {bbands_state}, symbol -> {parity['symbol']}, interval -> {parity['interval']}, lowerband -> {lowerband.iloc[-1]}, close -> {df.iloc[-1]['close']}")
@@ -311,7 +309,7 @@ async def main(df, parity, task_id, file_name, state, rsi_states):
                         state["bbands"] = bbands_state
                         state["bbands_open_time"] = df.iloc[-1]['open_time']
                         if bbands_state == 'l':
-                            msg = f"🟥🟥📉 *{parity['symbol']} - {parity['interval']}* Price = {df.iloc[-1]['close']:.2f} is lower than Bollinger Band - Lower Band = {lowerband.iloc[-1]:.2f} 🟥🟥📉"
+                            msg = f"🟥🟥📉 *{parity['symbol']} - {parity['interval']}* Price = {float(df.iloc[-1]['close']):.2f} is lower than Bollinger Band - Lower Band = {lowerband.iloc[-1]:.2f} 🟥🟥📉"
                             await telegram_bot_sendtext(msg)
 
 async def run_parities():
