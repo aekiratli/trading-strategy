@@ -292,11 +292,6 @@ async def main(df, parity, task_id, file_name, state, rsi_states):
                                 await telegram_bot_sendtext(msg)
                                 update_state_file(file_name, 'pmax', pmax_state)
 
-                        # update the state file
-                        update_state_file(file_name, 'pmax', pmax_state)
-                        # update the state
-                        state["pmax"] = pmax_state
-
             # calculate bolinger bands
             if parity["bbands"] == True:
                 # calculate bolinger bands
