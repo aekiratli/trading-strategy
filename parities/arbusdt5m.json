@@ -14,5 +14,6 @@
     "atr_length": 10,
     "ma_length": 9,
     "pmax_states": ["l", "p", "n"],
-    "pmax_percantage": 1.002
+    "pmax_percantage": 1.002,
+    "pmax_candle_reset": 4
 }

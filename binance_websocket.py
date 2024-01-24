@@ -257,11 +257,12 @@ async def main(df, parity, task_id, file_name, state, rsi_states):
                             if pmax_candle_counter == 0:
                                 logging.info(f"pmax_prev_state -> {state['pmax']}, pmax_state -> {pmax_state}, symbol -> {parity['symbol']}, interval -> {parity['interval']}, pmax -> {pmax}, ma -> {pmax_df.iloc[-1,-3]}, close -> {close}")
                                 msg = f"🟪🟪🟪 *{parity['symbol']} - {parity['interval']}* - Price is on PMAX = {pmax:.2f} 🟪🟪🟪"
+                                state["pmax"] = pmax_state
                                 await telegram_bot_sendtext(msg)
                                 is_n_to_l_notif_sent = True
                                 update_state_file(file_name, 'pmax', pmax_state)
 
-                            elif pmax_candle_counter == 3:
+                            elif pmax_candle_counter == parity["pmax_candle_reset"]:
                                 is_n_to_l_notif_sent = False
                                 pmax_candle_counter = 0
                                 logging.info(f"counter rested for -> {pmax_candle_counter}, pmax_state -> {pmax_state}, symbol -> {parity['symbol']}, interval -> {parity['interval']}, pmax -> {pmax}, ma -> {pmax_df.iloc[-1,-3]}, close -> {close}")
@@ -272,11 +273,12 @@ async def main(df, parity, task_id, file_name, state, rsi_states):
                             if pmax_candle_counter == 0:
                                 logging.info(f"pmax_prev_state -> {state['pmax']}, pmax_state -> {pmax_state}, symbol -> {parity['symbol']}, interval -> {parity['interval']}, pmax -> {pmax}, ma -> {pmax_df.iloc[-1,-3]}, close -> {close}")
                                 msg = f"🟪🟪🟪 *{parity['symbol']} - {parity['interval']}* - Price is on PMAX = {pmax:.2f} 🟪🟪🟪"
+                                state["pmax"] = pmax_state
                                 await telegram_bot_sendtext(msg)
                                 is_n_to_l_notif_sent = True
                                 update_state_file(file_name, 'pmax', pmax_state)
 
-                            elif pmax_candle_counter == 3:
+                            elif pmax_candle_counter == parity["pmax_candle_reset"]:
                                 is_n_to_l_notif_sent = False
                                 pmax_candle_counter = 0
                                 logging.info(f"counter rested for -> {pmax_candle_counter}, pmax_state -> {pmax_state}, symbol -> {parity['symbol']}, interval -> {parity['interval']}, pmax -> {pmax}, ma -> {pmax_df.iloc[-1,-3]}, close -> {close}")
@@ -288,6 +290,7 @@ async def main(df, parity, task_id, file_name, state, rsi_states):
                                 logging.info(f"pmax_prev_state -> {state['pmax']}, pmax_state -> {pmax_state}, symbol -> {parity['symbol']}, interval -> {parity['interval']}, pmax -> {pmax}, ma -> {pmax_df.iloc[-1,-3]}, close -> {close}")
                                 msg = f"🟨🟨🟨 *{parity['symbol']} - {parity['interval']}* Price = {close:.2f} is close to PMAX = {pmax:.2f}  🟨🟨🟨"
                                 state["pmax_open_time"] = df.iloc[-1]['open_time']
+                                state["pmax"] = pmax_state
                                 update_state_file(file_name, 'pmax_open_time', df.iloc[-1]['open_time'])
                                 await telegram_bot_sendtext(msg)
                                 update_state_file(file_name, 'pmax', pmax_state)
