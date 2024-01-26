@@ -8,6 +8,7 @@ import Fade from '@mui/material/Fade';
 import Backdrop from '@mui/material/Backdrop';
 import { TextareaAutosize as BaseTextareaAutosize } from '@mui/base/TextareaAutosize';
 import Cookies from 'universal-cookie';
+import { v4 } from "uuid";
 
 const style = {
   position: 'absolute',
@@ -86,6 +87,7 @@ const HoverableCard = styled(Card)`
 
 export default function Parities() {
   const [open, setOpen] = React.useState(false);
+  const [deleteModalOpen, setDeleteModalOpen] = React.useState(false);
   const [canSubmit, setCanSubmit] = React.useState(false);
   const [textData, setTextData] = React.useState('');
   const [selectedCard, setSelectedCard] = React.useState(null);
@@ -129,15 +131,12 @@ export default function Parities() {
   }
 
   const getStatusColor = (is_parity_active) => {
-
-    if (is_parity_active === 'true') {
+    if (is_parity_active === false) {
       return '#ff9e3e';
     } else {
       return '#3e9fff ';
     }
   };
-
-
 
   React.useEffect(() => {
     // fetch parities
@@ -153,7 +152,11 @@ export default function Parities() {
         });
       const data = await response.json();
       if (data) {
-        setParities(data);
+        const newParities = data.map((parity) => {
+          return { ...parity, id: v4() };
+        }
+        );
+        setParities(newParities);
       }
     }
     getParities();
@@ -176,21 +179,70 @@ export default function Parities() {
     // if (data) {
     //   handleClose();
     // }
-    // update parities state
-    const updatedParities = [...parities];
-    console.log(parities, "parities")
-    const index = updatedParities.findIndex((parity) => parity.index === selectedCard.index);
-    updatedParities[index] = JSON.parse(textData);
-    console.log(updatedParities, "updatedParities")
-    setParities([...updatedParities]);
+    // update parities without changing index
+    const newParities = [...parities];
+    newParities[parities.indexOf(selectedCard)] = JSON.parse(textData);
+    const newId = v4();
+    newParities[parities.indexOf(selectedCard)].id = newId;
+    setParities(newParities);
+    handleClose();
+  }
 
+  const handleAdd = async () => {
+    const token = new Cookies().get('token');
+    const parityName = JSON.parse(textData).symbol + JSON.parse(textData).interval + '.json';
+    console.log(`http://localhost:5005/update_parities/${parityName}`);
+    const response = await fetch(`http://localhost:5005/update_parity/${parityName}`,
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`, // Use appropriate authentication scheme and token format
+          'Content-Type': 'application/json'
+          // If you're using a different type of authentication, adjust the header accordingly
+        },
+        body: textData
+      });
+    const data = await response.json();
+    if (data) {
+      handleClose();
+      const newParities = [...parities];
+      const newId = v4();
+      newParities.push({ ...JSON.parse(textData), id: newId });
+      setParities(newParities);
+      handleClose();
+    }
+
+  }
+
+  const handleDelete = async () => {
+    // const token = new Cookies().get('token');
+    // const response = await fetch('http://localhost:5005/update_parities',
+    //   {
+    //     method: 'POST',
+    //     headers: {
+    //       'Authorization': `Bearer ${token}`, // Use appropriate authentication scheme and token format
+    //       'Content-Type': 'application/json'
+    //       // If you're using a different type of authentication, adjust the header accordingly
+    //     },
+    //     body: textData
+    //   });
+    // const data = await response.json();
+    // if (data) {
+    //   handleClose();
+    // }
+    // update parities without changing index
+    const newParities = [...parities];
+    newParities.splice(parities.indexOf(selectedCard), 1);
+    setParities(newParities);
+    handleClose();
+    setDeleteModalOpen(false);
   }
 
   return (
     <Box style={{ backgroundColor: 'black' }}>
       <Box display="flex" flexWrap="wrap">
         {parities?.map((parity, index) => (
-          <HoverableCard onClick={() => { handleOpen(index) }} key={parity.index} sx={{ minWidth: 275, margin: 2, backgroundColor: getStatusColor(parity.is_parity_active) }}>
+          <HoverableCard onClick={() => { handleOpen(index) }} key={parity.id} sx={{ minWidth: 275, margin: 2, backgroundColor: getStatusColor(parity.is_parity_active) }}>
             <CardContent>
               <Typography variant="h5" component="h2">
                 {parity?.symbol} - {parity?.interval}
@@ -240,7 +292,29 @@ export default function Parities() {
         <Fade in={open}>
           <Box display='flex' flexDirection="column" sx={style}>
             <TextareaAutosize onChange={onTextChange} value={textData} aria-label="empty textarea" />
-            <Button onClick={handleSave} disabled={!canSubmit} variant="contained">{isAddParity ? 'Add and Restart' : 'Save and Restart'}</Button>
+            <Button onClick={() => {isAddParity ? handleAdd() : handleSave()}} disabled={!canSubmit} variant="contained">{isAddParity ? 'Add and Restart' : 'Save and Restart'}</Button>
+            <Button onClick={() => {setDeleteModalOpen(true)}}>Delete</Button>
+          </Box>
+        </Fade>
+      </Modal>
+      <Modal
+        aria-labelledby="transition-modal-title"
+        aria-describedby="transition-modal-description"
+        open={deleteModalOpen}
+        onClose={() => {setDeleteModalOpen(false)}}
+        closeAfterTransition
+        slots={{ backdrop: Backdrop }}
+        slotProps={{
+          backdrop: {
+            timeout: 500,
+          },
+        }}
+      >
+        <Fade in={deleteModalOpen}>
+          <Box display='flex' flexDirection="column" sx={style}>
+            <Typography>Are you sure you want to delete {selectedCard?.symbol}-{selectedCard?.interval}</Typography>
+            <Button onClick={() => {setDeleteModalOpen(false)}}>Cancel</Button>
+            <Button onClick={() => {handleDelete()}}>Delete</Button>
           </Box>
         </Fade>
       </Modal>

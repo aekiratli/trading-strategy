@@ -127,7 +127,7 @@ def list_parities():
     }]
     return demo
 
-@app.route('/update_parity/<string:parity>')
+@app.route('/update_parity/<string:parity>', methods=['POST'])
 @jwt_required()
 def create_or_update_parity(parity):
     if not parity.endswith('.json'):
@@ -135,12 +135,13 @@ def create_or_update_parity(parity):
     if not request.is_json:
         return jsonify({"msg": "Missing JSON in request"}), 400
     data = request.get_json()
+    print(data)
     resp = requests.post(
         urljoin(api_base, "files/path/home/{username}/{file}".format(username=app.config['PYTHONANYWHERE_USERNAME'], file=parity)),
         files={"content": json.dumps(data, indent=4)},
         headers={"Authorization": "Token {api_token}".format(api_token=app.config['PYTHONANYWHERE_TOKEN'])}
     )
-    return resp.text
+    return jsonify({"msg": "Parity updated"}), 200
 
 @app.route('/delete_parity/<string:parity>')
 @jwt_required()
