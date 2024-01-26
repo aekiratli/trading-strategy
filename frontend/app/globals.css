@@ -108,4 +108,7 @@ a {
 
 body {
   background-color: gray;
+  overflow-x: hidden;
+  margin : 0;
+  background-color: black;
 }

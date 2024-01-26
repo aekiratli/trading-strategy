@@ -48,17 +48,21 @@ export default function LoginPage() {
                     label="Username"
                     type="text"
                     name="username"
+                    style={{marginBottom:'10px'}}
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
                 />
                 <TextField
                     label="Password"
                     type="password"
+                    style={{marginBottom:'10px'}}
+
                     name="password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                 />
-                <Button variant="contained" type="submit">Login</Button>
+                <Button                     style={{marginBottom:'10px'}}
+ variant="contained" type="submit">Login</Button>
                 {error && <Typography color="error">{error}</Typography>}
             </form>
         </div>

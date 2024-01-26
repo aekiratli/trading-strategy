@@ -20,7 +20,13 @@ import Parities from "./components/parities";
 import { ChevronRight as ChevronRightIcon } from '@mui/icons-material';
 import { Icon } from "@mui/material";
 import IconButton from '@mui/material/IconButton';
+import { ThemeProvider, createTheme } from '@mui/material/styles';
 
+const darkTheme = createTheme({
+  palette: {
+    mode: 'dark',
+  },
+});
 
 export default function Home() {
 
@@ -42,67 +48,70 @@ export default function Home() {
   }
 
   return (
-    <Box sx={{ display: 'flex' }}>
+    <ThemeProvider theme={darkTheme}>
       <CssBaseline />
-      <AppBar
-        position="fixed"
-        sx={{ width: `calc(100% - ${drawerWidth}px)`, ml: `${drawerWidth}px` ,
-        transition: (theme) => theme.transitions.create('width', {
-          easing: theme.transitions.easing.sharp,
-          duration: theme.transitions.duration.enteringScreen,
-        }),
-        }}
-      >
-      </AppBar>
-      <Drawer
-        sx={{
-          width: drawerWidth,
-          flexShrink: 0,
-          // add a transition
-          transition: (theme) => theme.transitions.create('width', {
-            easing: theme.transitions.easing.sharp,
-            duration: theme.transitions.duration.enteringScreen,
-          }),
-          '& .MuiDrawer-paper': {
+      <Box sx={{ display: 'flex' }}>
+        <AppBar
+          position="fixed"
+          sx={{
+            width: `calc(100% - ${drawerWidth}px)`, ml: `${drawerWidth}px`,
+            transition: (theme) => theme.transitions.create('width', {
+              easing: theme.transitions.easing.sharp,
+              duration: theme.transitions.duration.enteringScreen,
+            }),
+          }}
+        >
+        </AppBar>
+        <Drawer
+          sx={{
             width: drawerWidth,
-            boxSizing: 'border-box',
+            flexShrink: 0,
+            // add a transition
+            transition: (theme) => theme.transitions.create('width', {
+              easing: theme.transitions.easing.sharp,
+              duration: theme.transitions.duration.enteringScreen,
+            }),
+            '& .MuiDrawer-paper': {
+              width: drawerWidth,
+              boxSizing: 'border-box',
 
-          },
-        }}
-        variant="permanent"
-        anchor="left"
-      >
+            },
+          }}
+          variant="permanent"
+          anchor="left"
+        >
 
-        <Toolbar />
-        <IconButton onClick={handleDrawerClose}>
-          <ChevronRightIcon />
-        </IconButton>
-        <Divider />
-        <List>
-          {['Parities', 'Trading Overview','Notification Logs', 'Trading Logs', ].map((text, index) => (
-            <ListItem key={text} disablePadding>
-              <ListItemButton onClick={() => {handleItemMenu(index)}}>
-                <ListItemIcon>
-                  {index === 0 && <FormatListNumberedRtlIcon />}
-                  {index === 1 && <AttachMoneyIcon />}
-                  {index === 2 && <NotificationsIcon />}
-                  {index === 3 && <NotificationsIcon />}
+          <Toolbar />
+          <IconButton onClick={handleDrawerClose}>
+            <ChevronRightIcon />
+          </IconButton>
+          <Divider />
+          <List>
+            {['Parities', 'Trading Overview', 'Notification Logs', 'Trading Logs',].map((text, index) => (
+              <ListItem key={text} disablePadding>
+                <ListItemButton onClick={() => { handleItemMenu(index) }}>
+                  <ListItemIcon>
+                    {index === 0 && <FormatListNumberedRtlIcon />}
+                    {index === 1 && <AttachMoneyIcon />}
+                    {index === 2 && <NotificationsIcon />}
+                    {index === 3 && <NotificationsIcon />}
 
-                </ListItemIcon>
-                <ListItemText primary={text} />
-              </ListItemButton>
-            </ListItem>
-          ))}
-        </List>
-        <Divider />
+                  </ListItemIcon>
+                  <ListItemText primary={text} />
+                </ListItemButton>
+              </ListItem>
+            ))}
+          </List>
+          <Divider />
         </Drawer>
-      <Box
-        component="main"
-        sx={{ flexGrow: 1, bgcolor: 'background.default', p: 3 }}
-      >
-        {/* <Toolbar /> */}
-        {selectedComponent === 0 && <Parities />}
+        <Box
+          component="main"
+          sx={{ flexGrow: 1, bgcolor: 'background.default', p: 3 }}
+        >
+          {/* <Toolbar /> */}
+          {selectedComponent === 0 && <Parities />}
+        </Box>
       </Box>
-    </Box>
+    </ThemeProvider>
   );
 }

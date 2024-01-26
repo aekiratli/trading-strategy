@@ -45,10 +45,87 @@ def login():
 @app.route('/list_parities')
 @jwt_required()
 def list_parities():
-    resp = requests.get(
-        urljoin(api_base, "files/path/home/{username}/{path}".format(username=app.config['PYTHONANYWHERE_USERNAME'], path=app.config['WORKDIR'])),
-        headers={"Authorization": "Token {api_token}".format(api_token=app.config['PYTHONANYWHERE_TOKEN'])})
-    return resp.json()
+    # resp = requests.get(
+    #     urljoin(api_base, "files/path/home/{username}/{path}".format(username=app.config['PYTHONANYWHERE_USERNAME'], path=app.config['WORKDIR'])),
+    #     headers={"Authorization": "Token {api_token}".format(api_token=app.config['PYTHONANYWHERE_TOKEN'])})
+
+    # parities = []
+    # for parity in resp.json():
+    #     resp = requests.get(
+    #         urljoin(api_base, "files/path/home/{username}/{path}/{file}".format(username=app.config['PYTHONANYWHERE_USERNAME'], path=app.config["WORKDIR"],file=parity)),
+    #         headers={"Authorization": "Token {api_token}".format(api_token=app.config['PYTHONANYWHERE_TOKEN'])}
+    #     )
+    #     parities.append(resp.json())
+    # return parities
+
+    demo = [{
+        "symbol": "BNBUSDT",
+        "atr_length": 10,
+        "atr_multiplier": 3,
+        "bbands": True,
+        "interval": "15m",
+        "is_parity_active": True,
+        "lower_rsi_bounds": [
+            30,
+            20
+        ],
+        "ma_length": 9,
+        "moving_average": "sma",
+        "pmax": True,
+        "pmax_candle_reset": 4,
+        "pmax_percantage": 1.003,
+        "pmax_states": [
+            "l",
+            "p",
+            "n"
+        ],
+        "rsi": True,
+        "rsi_states": [
+            "h1",
+            "n",
+            "l1",
+            "l2"
+        ],
+        "start": "40 hours ago UTC",
+        
+        "upper_rsi_bounds": [
+            80
+        ]
+    },
+    {
+        "atr_length": 10,
+                "symbol": "ARBUSDT",
+        "atr_multiplier": 3,
+        "bbands": True,
+        "interval": "15m",
+        "is_parity_active": True,
+        "lower_rsi_bounds": [
+            30,
+            20
+        ],
+        "ma_length": 9,
+        "moving_average": "sma",
+        "pmax": True,
+        "pmax_candle_reset": 4,
+        "pmax_percantage": 1.003,
+        "pmax_states": [
+            "l",
+            "p",
+            "n"
+        ],
+        "rsi": True,
+        "rsi_states": [
+            "h1",
+            "n",
+            "l1",
+            "l2"
+        ],
+        "start": "40 hours ago UTC",
+        "upper_rsi_bounds": [
+            80
+        ]
+    }]
+    return demo
 
 @app.route('/update_parity/<string:parity>')
 @jwt_required()
