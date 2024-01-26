@@ -11,8 +11,8 @@ from flask_cors import CORS
 load_dotenv()  # Load environment variables from .env
 
 app = Flask(__name__)
-jwt = JWTManager(app)
 CORS(app)
+jwt = JWTManager(app)
 
 # Access environment variables
 app.config['PYTHONANYWHERE_USERNAME'] = os.getenv('PYTHONANYWHERE_USERNAME')
@@ -95,4 +95,4 @@ def restart_always_on_task(id):
     return resp.json()
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, port=5005)
