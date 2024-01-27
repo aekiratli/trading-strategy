@@ -56,7 +56,7 @@ def list_parities():
             headers={"Authorization": "Token {api_token}".format(api_token=app.config['PYTHONANYWHERE_TOKEN'])}
         )
         parities.append(resp.json())
-    return parities
+    return jsonify(parities), 200
 
     # demo = [{
     #     "symbol": "BNBUSDT",
