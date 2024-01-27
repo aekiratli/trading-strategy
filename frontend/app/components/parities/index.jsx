@@ -88,6 +88,7 @@ const HoverableCard = styled(Card)`
 export default function Parities() {
   const [open, setOpen] = React.useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = React.useState(false);
+  const [restartModalOpen, setRestartModalOpen] = React.useState(false);
   const [canSubmit, setCanSubmit] = React.useState(false);
   const [textData, setTextData] = React.useState('');
   const [selectedCard, setSelectedCard] = React.useState(null);
@@ -142,7 +143,7 @@ export default function Parities() {
     // fetch parities
     async function getParities() {
       const token = new Cookies().get('token');
-      const response = await fetch(`http://localhost:5005/list_parities`,
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/list_parities`,
         {
           headers: {
             'Authorization': `Bearer ${token}` // Use appropriate authentication scheme and token format
@@ -165,7 +166,7 @@ export default function Parities() {
   const handleSave = async () => {
     const token = new Cookies().get('token');
     const parityName = JSON.parse(textData).symbol + JSON.parse(textData).interval + '.json';
-    const response = await fetch(`http://localhost:5005/update_parity/${parityName}`,
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/update_parity/${parityName}`,
       {
         method: 'POST',
         headers: {
@@ -191,7 +192,7 @@ export default function Parities() {
   const handleAdd = async () => {
     const token = new Cookies().get('token');
     const parityName = JSON.parse(textData).symbol + JSON.parse(textData).interval + '.json';
-    const response = await fetch(`http://localhost:5005/update_parity/${parityName}`,
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/update_parity/${parityName}`,
       {
         method: 'POST',
         headers: {
@@ -212,10 +213,11 @@ export default function Parities() {
     }
   }
 
+
   const handleDelete = async () => {
     const token = new Cookies().get('token');
     const parityName = JSON.parse(textData).symbol + JSON.parse(textData).interval + '.json';
-    const response = await fetch(`http://localhost:5005/delete_parity/${parityName}`,
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/delete_parity/${parityName}`,
       {
         method: 'POST',
         headers: {
@@ -234,7 +236,23 @@ export default function Parities() {
       handleClose();
       setDeleteModalOpen(false);
     }
+  }
 
+  const handleRestart = async () => {
+    const token = new Cookies().get('token');
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/restart`,
+      {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`, // Use appropriate authentication scheme and token format
+          'Content-Type': 'application/json'
+          // If you're using a different type of authentication, adjust the header accordingly
+        }
+      });
+    const data = await response.json();
+    if (data) {
+      setRestartModalOpen(false);
+    }
   }
 
   return (
@@ -268,10 +286,11 @@ export default function Parities() {
           </HoverableCard>
         ))}
         <Card sx={{ minWidth: 275, margin: 2, minHeight: '220px' }}>
-          <div style={{ display: 'flex', height: '100%', justifyContent: 'center', alignItems: 'center' }}>
+          <div style={{ display: 'flex', height: '100%', flexDirection:'column', justifyContent: 'center', alignItems: 'center' }}>
             <IconButton onClick={handleAddParity} size='large'>
               <AddIcon />
             </IconButton>
+            <Button onClick={() => { setRestartModalOpen(true) }}>Restart Bot</Button>
           </div>
         </Card>
       </Box>
@@ -314,6 +333,27 @@ export default function Parities() {
             <Typography>Are you sure you want to delete {selectedCard?.symbol}-{selectedCard?.interval}</Typography>
             <Button onClick={() => { setDeleteModalOpen(false) }}>Cancel</Button>
             <Button onClick={() => { handleDelete() }}>Delete</Button>
+          </Box>
+        </Fade>
+      </Modal>
+      <Modal
+        aria-labelledby="transition-modal-title"
+        aria-describedby="transition-modal-description"
+        open={restartModalOpen}
+        onClose={() => { setRestartModalOpen(false) }}
+        closeAfterTransition
+        slots={{ backdrop: Backdrop }}
+        slotProps={{
+          backdrop: {
+            timeout: 500,
+          },
+        }}
+      >
+        <Fade in={restartModalOpen}>
+          <Box display='flex' flexDirection="column" sx={style}>
+            <Typography>Are you sure you want to restart the bot?</Typography>
+            <Button onClick={() => { setRestartModalOpen(false) }}>Cancel</Button>
+            <Button onClick={() => { handleRestart() }}>Restart</Button>
           </Box>
         </Fade>
       </Modal>

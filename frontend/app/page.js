@@ -34,9 +34,14 @@ export default function Home() {
   const [drawerWidth, setDrawerWidth] = React.useState(300);
 
   const auth = useAuth();
-  if (!auth) {
-    redirect(`/login`)
-  }
+
+  React.useEffect(() => {
+
+    if (!auth) {
+      redirect(`/login`)
+    }
+  }, [auth]);
+
   const handleItemMenu = (index) => {
     setSelectedComponent(index);
   }

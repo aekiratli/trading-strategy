@@ -134,6 +134,8 @@ def create_or_update_parity(parity):
         return jsonify({"msg": "Bad parity format"}), 400
     if not request.is_json:
         return jsonify({"msg": "Missing JSON in request"}), 400
+    #lowercase  parity
+    parity = parity.lower()
     data = request.get_json()
     resp = requests.post(
         urljoin(api_base, "files/path/home/{username}/{path}/{file}".format(username=app.config['PYTHONANYWHERE_USERNAME'], path=app.config["WORKDIR"], file=parity)),
@@ -150,29 +152,47 @@ def create_or_update_parity(parity):
 def delete_parity(parity):
     if not parity.endswith('.json'):
         return jsonify({"msg": "Bad parity format"}), 400
-
+    parity = parity.lower()
     resp = requests.delete(
         urljoin(api_base, "files/path/home/{username}/{path}/{file}".format(username=app.config['PYTHONANYWHERE_USERNAME'],path=app.config["WORKDIR"], file=parity)),
         headers={"Authorization": "Token {api_token}".format(api_token=app.config['PYTHONANYWHERE_TOKEN'])}
     )
-    return jsonify({"msg": "Parity deleted"}), 200
+    if resp.status_code == 204:
+        return jsonify({"msg": "Parity deleted"}), 200
+    else:
+        return jsonify({"msg": "Something went wrong"}), 500
+    
+# @app.route('/list_always_on_tasks')
+# @jwt_required()
+# def list_always_on_tasks():
+#     resp = requests.get(
+#         urljoin(api_base, "always_on"),
+#         headers={"Authorization": "Token {api_token}".format(api_token=app.config['PYTHONANYWHERE_TOKEN'])})
+#     return resp.json()
 
-@app.route('/list_always_on_tasks')
+# @app.route('/restart_always_on_task/<int:id>')
+# @jwt_required()
+# def restart_always_on_task(id):
+#     resp = requests.post(
+#         urljoin(api_base, "always_on/{id}/restart/".format(id=id)),
+#         headers={"Authorization": "Token {api_token}".format(api_token=app.config['PYTHONANYWHERE_TOKEN'])}
+# )
+#     return resp.json()
+
+@app.route('/restart')
 @jwt_required()
-def list_always_on_tasks():
+def restart():
+    # list all always on tasks restart them
     resp = requests.get(
         urljoin(api_base, "always_on"),
         headers={"Authorization": "Token {api_token}".format(api_token=app.config['PYTHONANYWHERE_TOKEN'])})
-    return resp.json()
-
-@app.route('/restart_always_on_task/<int:id>')
-@jwt_required()
-def restart_always_on_task(id):
-    resp = requests.post(
-        urljoin(api_base, "always_on/{id}/restart/".format(id=id)),
-        headers={"Authorization": "Token {api_token}".format(api_token=app.config['PYTHONANYWHERE_TOKEN'])}
-)
-    return resp.json()
+    for job in resp.json():
+        id = job['id']
+        resp = requests.post(
+            urljoin(api_base, "always_on/{id}/restart/".format(id=id)),
+            headers={"Authorization": "Token {api_token}".format(api_token=app.config['PYTHONANYWHERE_TOKEN'])}
+        )
+    return jsonify({"msg": "Restarted"}), 200
 
 if __name__ == '__main__':
     app.run(debug=True, port=5005)
