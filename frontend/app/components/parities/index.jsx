@@ -140,10 +140,9 @@ export default function Parities() {
 
   React.useEffect(() => {
     // fetch parities
-    // make request to 5005/list_parities to get parities insert them into state
     async function getParities() {
       const token = new Cookies().get('token');
-      const response = await fetch('http://localhost:5005/list_parities',
+      const response = await fetch(`http://localhost:5005/list_parities`,
         {
           headers: {
             'Authorization': `Bearer ${token}` // Use appropriate authentication scheme and token format
@@ -164,34 +163,34 @@ export default function Parities() {
   }, []);
 
   const handleSave = async () => {
-    // const token = new Cookies().get('token');
-    // const response = await fetch('http://localhost:5005/update_parities',
-    //   {
-    //     method: 'POST',
-    //     headers: {
-    //       'Authorization': `Bearer ${token}`, // Use appropriate authentication scheme and token format
-    //       'Content-Type': 'application/json'
-    //       // If you're using a different type of authentication, adjust the header accordingly
-    //     },
-    //     body: textData
-    //   });
-    // const data = await response.json();
-    // if (data) {
-    //   handleClose();
-    // }
-    // update parities without changing index
-    const newParities = [...parities];
-    newParities[parities.indexOf(selectedCard)] = JSON.parse(textData);
-    const newId = v4();
-    newParities[parities.indexOf(selectedCard)].id = newId;
-    setParities(newParities);
-    handleClose();
+    const token = new Cookies().get('token');
+    const parityName = JSON.parse(textData).symbol + JSON.parse(textData).interval + '.json';
+    const response = await fetch(`http://localhost:5005/update_parity/${parityName}`,
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`, // Use appropriate authentication scheme and token format
+          'Content-Type': 'application/json'
+          // If you're using a different type of authentication, adjust the header accordingly
+        },
+        body: textData
+      });
+    const data = await response.json();
+    if (data) {
+      // update parities without changing index
+      const newParities = [...parities];
+      newParities[parities.indexOf(selectedCard)] = JSON.parse(textData);
+      const newId = v4();
+      newParities[parities.indexOf(selectedCard)].id = newId;
+      setParities(newParities);
+      handleClose();
+    }
+
   }
 
   const handleAdd = async () => {
     const token = new Cookies().get('token');
     const parityName = JSON.parse(textData).symbol + JSON.parse(textData).interval + '.json';
-    console.log(`http://localhost:5005/update_parities/${parityName}`);
     const response = await fetch(`http://localhost:5005/update_parity/${parityName}`,
       {
         method: 'POST',
@@ -211,31 +210,31 @@ export default function Parities() {
       setParities(newParities);
       handleClose();
     }
-
   }
 
   const handleDelete = async () => {
-    // const token = new Cookies().get('token');
-    // const response = await fetch('http://localhost:5005/update_parities',
-    //   {
-    //     method: 'POST',
-    //     headers: {
-    //       'Authorization': `Bearer ${token}`, // Use appropriate authentication scheme and token format
-    //       'Content-Type': 'application/json'
-    //       // If you're using a different type of authentication, adjust the header accordingly
-    //     },
-    //     body: textData
-    //   });
-    // const data = await response.json();
-    // if (data) {
-    //   handleClose();
-    // }
-    // update parities without changing index
-    const newParities = [...parities];
-    newParities.splice(parities.indexOf(selectedCard), 1);
-    setParities(newParities);
-    handleClose();
-    setDeleteModalOpen(false);
+    const token = new Cookies().get('token');
+    const parityName = JSON.parse(textData).symbol + JSON.parse(textData).interval + '.json';
+    const response = await fetch(`http://localhost:5005/delete_parity/${parityName}`,
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`, // Use appropriate authentication scheme and token format
+          'Content-Type': 'application/json'
+          // If you're using a different type of authentication, adjust the header accordingly
+        },
+        body: textData
+      });
+    const data = await response.json();
+    if (data) {
+      // update parities without changing index
+      const newParities = [...parities];
+      newParities.splice(parities.indexOf(selectedCard), 1);
+      setParities(newParities);
+      handleClose();
+      setDeleteModalOpen(false);
+    }
+
   }
 
   return (
@@ -292,8 +291,8 @@ export default function Parities() {
         <Fade in={open}>
           <Box display='flex' flexDirection="column" sx={style}>
             <TextareaAutosize onChange={onTextChange} value={textData} aria-label="empty textarea" />
-            <Button onClick={() => {isAddParity ? handleAdd() : handleSave()}} disabled={!canSubmit} variant="contained">{isAddParity ? 'Add and Restart' : 'Save and Restart'}</Button>
-            <Button onClick={() => {setDeleteModalOpen(true)}}>Delete</Button>
+            <Button onClick={() => { isAddParity ? handleAdd() : handleSave() }} disabled={!canSubmit} variant="contained">{isAddParity ? 'Add and Restart' : 'Save and Restart'}</Button>
+            <Button onClick={() => { setDeleteModalOpen(true) }}>Delete</Button>
           </Box>
         </Fade>
       </Modal>
@@ -301,7 +300,7 @@ export default function Parities() {
         aria-labelledby="transition-modal-title"
         aria-describedby="transition-modal-description"
         open={deleteModalOpen}
-        onClose={() => {setDeleteModalOpen(false)}}
+        onClose={() => { setDeleteModalOpen(false) }}
         closeAfterTransition
         slots={{ backdrop: Backdrop }}
         slotProps={{
@@ -313,8 +312,8 @@ export default function Parities() {
         <Fade in={deleteModalOpen}>
           <Box display='flex' flexDirection="column" sx={style}>
             <Typography>Are you sure you want to delete {selectedCard?.symbol}-{selectedCard?.interval}</Typography>
-            <Button onClick={() => {setDeleteModalOpen(false)}}>Cancel</Button>
-            <Button onClick={() => {handleDelete()}}>Delete</Button>
+            <Button onClick={() => { setDeleteModalOpen(false) }}>Cancel</Button>
+            <Button onClick={() => { handleDelete() }}>Delete</Button>
           </Box>
         </Fade>
       </Modal>

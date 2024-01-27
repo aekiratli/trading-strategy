@@ -45,87 +45,87 @@ def login():
 @app.route('/list_parities')
 @jwt_required()
 def list_parities():
-    # resp = requests.get(
-    #     urljoin(api_base, "files/path/home/{username}/{path}".format(username=app.config['PYTHONANYWHERE_USERNAME'], path=app.config['WORKDIR'])),
-    #     headers={"Authorization": "Token {api_token}".format(api_token=app.config['PYTHONANYWHERE_TOKEN'])})
+    resp = requests.get(
+        urljoin(api_base, "files/path/home/{username}/{path}".format(username=app.config['PYTHONANYWHERE_USERNAME'], path=app.config['WORKDIR'])),
+        headers={"Authorization": "Token {api_token}".format(api_token=app.config['PYTHONANYWHERE_TOKEN'])})
 
-    # parities = []
-    # for parity in resp.json():
-    #     resp = requests.get(
-    #         urljoin(api_base, "files/path/home/{username}/{path}/{file}".format(username=app.config['PYTHONANYWHERE_USERNAME'], path=app.config["WORKDIR"],file=parity)),
-    #         headers={"Authorization": "Token {api_token}".format(api_token=app.config['PYTHONANYWHERE_TOKEN'])}
-    #     )
-    #     parities.append(resp.json())
-    # return parities
+    parities = []
+    for parity in resp.json():
+        resp = requests.get(
+            urljoin(api_base, "files/path/home/{username}/{path}/{file}".format(username=app.config['PYTHONANYWHERE_USERNAME'], path=app.config["WORKDIR"],file=parity)),
+            headers={"Authorization": "Token {api_token}".format(api_token=app.config['PYTHONANYWHERE_TOKEN'])}
+        )
+        parities.append(resp.json())
+    return parities
 
-    demo = [{
-        "symbol": "BNBUSDT",
-        "atr_length": 10,
-        "atr_multiplier": 3,
-        "bbands": True,
-        "interval": "15m",
-        "is_parity_active": True,
-        "lower_rsi_bounds": [
-            30,
-            20
-        ],
-        "ma_length": 9,
-        "moving_average": "sma",
-        "pmax": True,
-        "pmax_candle_reset": 4,
-        "pmax_percantage": 1.003,
-        "pmax_states": [
-            "l",
-            "p",
-            "n"
-        ],
-        "rsi": True,
-        "rsi_states": [
-            "h1",
-            "n",
-            "l1",
-            "l2"
-        ],
-        "start": "40 hours ago UTC",
+    # demo = [{
+    #     "symbol": "BNBUSDT",
+    #     "atr_length": 10,
+    #     "atr_multiplier": 3,
+    #     "bbands": True,
+    #     "interval": "15m",
+    #     "is_parity_active": True,
+    #     "lower_rsi_bounds": [
+    #         30,
+    #         20
+    #     ],
+    #     "ma_length": 9,
+    #     "moving_average": "sma",
+    #     "pmax": True,
+    #     "pmax_candle_reset": 4,
+    #     "pmax_percantage": 1.003,
+    #     "pmax_states": [
+    #         "l",
+    #         "p",
+    #         "n"
+    #     ],
+    #     "rsi": True,
+    #     "rsi_states": [
+    #         "h1",
+    #         "n",
+    #         "l1",
+    #         "l2"
+    #     ],
+    #     "start": "40 hours ago UTC",
         
-        "upper_rsi_bounds": [
-            80
-        ]
-    },
-    {
-        "atr_length": 10,
-                "symbol": "ARBUSDT",
-        "atr_multiplier": 3,
-        "bbands": True,
-        "interval": "15m",
-        "is_parity_active": True,
-        "lower_rsi_bounds": [
-            30,
-            20
-        ],
-        "ma_length": 9,
-        "moving_average": "sma",
-        "pmax": True,
-        "pmax_candle_reset": 4,
-        "pmax_percantage": 1.003,
-        "pmax_states": [
-            "l",
-            "p",
-            "n"
-        ],
-        "rsi": True,
-        "rsi_states": [
-            "h1",
-            "n",
-            "l1",
-            "l2"
-        ],
-        "start": "40 hours ago UTC",
-        "upper_rsi_bounds": [
-            80
-        ]
-    }]
-    return demo
+    #     "upper_rsi_bounds": [
+    #         80
+    #     ]
+    # },
+    # {
+    #     "atr_length": 10,
+    #             "symbol": "ARBUSDT",
+    #     "atr_multiplier": 3,
+    #     "bbands": True,
+    #     "interval": "15m",
+    #     "is_parity_active": True,
+    #     "lower_rsi_bounds": [
+    #         30,
+    #         20
+    #     ],
+    #     "ma_length": 9,
+    #     "moving_average": "sma",
+    #     "pmax": True,
+    #     "pmax_candle_reset": 4,
+    #     "pmax_percantage": 1.003,
+    #     "pmax_states": [
+    #         "l",
+    #         "p",
+    #         "n"
+    #     ],
+    #     "rsi": True,
+    #     "rsi_states": [
+    #         "h1",
+    #         "n",
+    #         "l1",
+    #         "l2"
+    #     ],
+    #     "start": "40 hours ago UTC",
+    #     "upper_rsi_bounds": [
+    #         80
+    #     ]
+    # }]
+    # return demo
 
 @app.route('/update_parity/<string:parity>', methods=['POST'])
 @jwt_required()
@@ -135,25 +135,27 @@ def create_or_update_parity(parity):
     if not request.is_json:
         return jsonify({"msg": "Missing JSON in request"}), 400
     data = request.get_json()
-    print(data)
     resp = requests.post(
-        urljoin(api_base, "files/path/home/{username}/{file}".format(username=app.config['PYTHONANYWHERE_USERNAME'], file=parity)),
+        urljoin(api_base, "files/path/home/{username}/{path}/{file}".format(username=app.config['PYTHONANYWHERE_USERNAME'], path=app.config["WORKDIR"], file=parity)),
         files={"content": json.dumps(data, indent=4)},
         headers={"Authorization": "Token {api_token}".format(api_token=app.config['PYTHONANYWHERE_TOKEN'])}
     )
-    return jsonify({"msg": "Parity updated"}), 200
+    if resp.status_code == 201:
+        return jsonify({"msg": "Parity updated/created"}), 201
+    else:
+        return jsonify({"msg": "Something went wrong"}), 500
 
-@app.route('/delete_parity/<string:parity>')
+@app.route('/delete_parity/<string:parity>', methods=['POST'])
 @jwt_required()
 def delete_parity(parity):
     if not parity.endswith('.json'):
         return jsonify({"msg": "Bad parity format"}), 400
 
     resp = requests.delete(
-        urljoin(api_base, "files/path/home/{username}/{file}".format(username=app.config['PYTHONANYWHERE_USERNAME'], file=parity)),
+        urljoin(api_base, "files/path/home/{username}/{path}/{file}".format(username=app.config['PYTHONANYWHERE_USERNAME'],path=app.config["WORKDIR"], file=parity)),
         headers={"Authorization": "Token {api_token}".format(api_token=app.config['PYTHONANYWHERE_TOKEN'])}
     )
-    return resp.text
+    return jsonify({"msg": "Parity deleted"}), 200
 
 @app.route('/list_always_on_tasks')
 @jwt_required()
