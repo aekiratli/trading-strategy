@@ -151,7 +151,8 @@ export default function Parities() {
           }
         });
       const data = await response.json();
-      if (data) {
+      const code = response.status;
+      if (code === 200) {
         const newParities = data.map((parity) => {
           return { ...parity, id: v4() };
         }

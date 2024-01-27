@@ -24,7 +24,6 @@ export default function LoginPage() {
             if (response.ok) {
                 const data = await response.json();
                 const token = data.access_token;
-                console.log("Login successful:", data);
                 // Set token using universal-cookie
                 const cookies = new Cookies();
                 cookies.set("token", token, { path: "/" });
