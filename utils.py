@@ -61,7 +61,7 @@ def update_state_file(file_name, state, state_value):
         
 def initialize_state_files(file_names):
     # create state directory if it doesn't exist
-    data = {"rsi": "n", "pmax": "n", "bbands": "n"}
+    data = {"rsi": "n", "pmax": "n", "bbands": "n", "experimantal_rsi_trading_bought": False, "is_n_to_l_notif_sent": False, "pmax_candle_counter": 0}
 
     if not os.path.exists(STATE_PATH):
         os.makedirs(STATE_PATH)
@@ -131,3 +131,13 @@ def get_candles(symbol, interval, start) -> pd.DataFrame:
     klines = client.get_historical_klines(symbol=symbol, interval=interval, start_str=start)
     df = pd.DataFrame(klines, columns=['open_time', 'open', 'high', 'low', 'close', 'volume', 'close_time', 'quote_asset_volume', 'number_of_trades', 'taker_buy_base_asset_volume', 'taker_buy_quote_asset_volume', 'ignore'])
     return df
+
+def get_amount_to_buy(quota, symbol):
+    # calculate the amount to buy based on the quota using client
+    # get the price of the symbol
+    price = client.get_symbol_ticker(symbol=symbol)['price']
+    # calculate the amount to buy
+    amount_to_buy = quota / float(price)
+    # use decimal  of 4
+    amount_to_buy = round(amount_to_buy, 4)
+    return amount_to_buy

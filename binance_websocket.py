@@ -10,6 +10,7 @@ from technical.indicators import PMAX
 import warnings
 from utils import *
 from dotenv import load_dotenv
+from logger import Logger
 
 load_dotenv()
 warnings.filterwarnings('ignore')
@@ -18,9 +19,11 @@ CHAT_ID = os.getenv("CHAT_ID")
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 async def main(df, parity, task_id, file_name, state, rsi_states):
+
     is_first_run = True
-    pmax_candle_counter = 0
-    is_n_to_l_notif_sent = False
+    pmax_candle_counter = state['pmax_candle_counter']
+    is_n_to_l_notif_sent = state['is_n_to_l_notif_sent']
+
     # check if rsi_open_time attribute exists
     if hasattr(state, 'rsi_open_time'):
         pass
@@ -46,16 +49,18 @@ async def main(df, parity, task_id, file_name, state, rsi_states):
         state.update({"bbands_open_time": df.iloc[-2]['open_time']})
         # write to state file
         update_state_file(file_name, 'bbands_open_time', df.iloc[-2]['open_time'])
+
     SYMBOL = parity['symbol']
     INTERVAL = parity['interval']
+    logger = Logger(f"{parity['symbol']}{parity['interval']}.json")
     client = await AsyncClient.create()
     bm = BinanceSocketManager(client)
-    # start any sockets here, i.e a trade socketa
     ts = bm.kline_socket(SYMBOL, interval=INTERVAL)
-    # then start receiving messages
+
     async with ts as tscm:
         while True:
             res = await tscm.recv()
+
             if res['k']['x']:
                 # candle is closed, concat new candle to df
                 new_candle_data = [res['k']['t'], res['k']['o'], res['k']['h'], res['k']['l'], res['k']['c'], res['k']['v'], res['k']['T'], res['k']['q'], res['k']['n'], res['k']['V'], res['k']['Q'], res['k']['B']]
@@ -72,16 +77,23 @@ async def main(df, parity, task_id, file_name, state, rsi_states):
                 calculate_pmax = True
                 if is_n_to_l_notif_sent == True:
                     pmax_candle_counter += 1
+                    # update state file
                     if pmax_candle_counter == parity["pmax_candle_reset"] - 1:
                         is_n_to_l_notif_sent = False
                         pmax_candle_counter = 0
+                        # update state file
+                        update_state_file(file_name, 'is_n_to_l_notif_sent', False)
+                        update_state_file(file_name, 'pmax_candle_counter', 0)
                         logging.info(f"counter reset for symbol -> {parity['symbol']}, interval -> {parity['interval']}")
+                    else:
+                        update_state_file(file_name, 'pmax_candle_counter', pmax_candle_counter)
 
             else:
                 # candle is open, update last candle
                 df.loc[df.index[-1]] = [res['k']['t'], res['k']['o'], res['k']['h'], res['k']['l'], res['k']['c'], res['k']['v'], res['k']['T'], res['k']['q'], res['k']['n'], res['k']['V'], res['k']['Q'], res['k']['B']]
                 calculate_pmax = False
-            # pamx related
+
+            # pmax related
             if is_first_run == True:
                 calculate_pmax = True
                 is_first_run = False
@@ -119,6 +131,7 @@ async def main(df, parity, task_id, file_name, state, rsi_states):
                     pmax_df = PMAX(df, length=9, MAtype=4, src=2)
                     pmax = float(pmax_df.iloc[-1,-2])
                 close = float(df.iloc[-1]['close'])
+
                 # check buy signal
                 if pmax_df.iloc[-1,-1] == "up":
                     # check if price is lower than pmax
@@ -133,6 +146,7 @@ async def main(df, parity, task_id, file_name, state, rsi_states):
                         if state['pmax'] == 'n' and pmax_state == 'l':
                             if pmax_candle_counter == 0:
                                 pmax_candle_counter += 1
+                                update_state_file(file_name, 'pmax_candle_counter', pmax_candle_counter)
                                 logging.info(f"pmax_prev_state -> {state['pmax']}, pmax_state -> {pmax_state}, symbol -> {parity['symbol']}, interval -> {parity['interval']}, pmax -> {pmax}, ma -> {pmax_df.iloc[-1,-3]}, close -> {close}")
                                 msg = f"🟪🟪🟪 *{parity['symbol']} - {parity['interval']}* - Price is on PMAX = {pmax:.2f} 🟪🟪🟪"
                                 await telegram_bot_sendtext(msg)
@@ -143,6 +157,7 @@ async def main(df, parity, task_id, file_name, state, rsi_states):
                         if state['pmax'] == 'p' and pmax_state == 'l':
                             if pmax_candle_counter == 0:
                                 pmax_candle_counter += 1
+                                update_state_file(file_name, 'pmax_candle_counter', pmax_candle_counter)
                                 logging.info(f"pmax_prev_state -> {state['pmax']}, pmax_state -> {pmax_state}, symbol -> {parity['symbol']}, interval -> {parity['interval']}, pmax -> {pmax}, ma -> {pmax_df.iloc[-1,-3]}, close -> {close}")
                                 msg = f"🟪🟪🟪 *{parity['symbol']} - {parity['interval']}* - Price is on PMAX = {pmax:.2f} 🟪🟪🟪"
                                 await telegram_bot_sendtext(msg)
@@ -165,10 +180,13 @@ async def main(df, parity, task_id, file_name, state, rsi_states):
                 # calculate bolinger bands
                 upperband, middleband, lowerband = talib.BBANDS(df['close'], timeperiod=20, nbdevup=3, nbdevdn=3, matype=0)
                 #check if price is lower than lowerband
+
                 if np.float64(df.iloc[-1]['close']) < lowerband.iloc[-1]:
                     bbands_state = "l"
+
                 else:
                     bbands_state = "n"
+                    
                 if state['bbands'] != bbands_state:
                     if state["bbands_open_time"] != df.iloc[-1]['open_time']:
                         logging.info(f"bbands_state -> {bbands_state}, symbol -> {parity['symbol']}, interval -> {parity['interval']}, lowerband -> {lowerband.iloc[-1]}, close -> {df.iloc[-1]['close']}")
@@ -181,6 +199,26 @@ async def main(df, parity, task_id, file_name, state, rsi_states):
                         if bbands_state == 'l':
                             msg = f"🟥🟥📉 *{parity['symbol']} - {parity['interval']}* Price = {float(df.iloc[-1]['close']):.2f} is lower than Bollinger Band - Lower Band = {lowerband.iloc[-1]:.2f} 🟥🟥📉"
                             await telegram_bot_sendtext(msg)
+
+            if parity["experimantal_rsi_trading"] == True and parity["rsi"] == True:
+                rsi_value = rsi.iloc[-1]
+                if rsi_value < 30 and state["experimantal_rsi_trading_bought"] == False:
+                        close = float(df.iloc[-1]['close'])
+                        logging.info(f"buying for -> rsi_value -> {rsi_value}, symbol -> {parity['symbol']}, interval -> {parity['interval']}, close -> {close}")
+                        quota = parity['experimantal_rsi_trading_quota']
+                        amount = get_amount_to_buy(quota, parity['symbol'])
+                        logger.save({"zone": "buy", "price":close, "amount": amount, "quota": quota}, "experimantal_rsi_trading")
+                        state["experimantal_rsi_trading_bought"] = True
+                        update_state_file(file_name, 'experimantal_rsi_trading_bought', True)
+
+                if rsi_value > 80 and state["experimantal_rsi_trading_bought"] == True:
+                        close = float(df.iloc[-1]['close'])
+                        logging.info(f"selling for -> rsi_value -> {rsi_value}, symbol -> {parity['symbol']}, interval -> {parity['interval']}, close -> {close}")
+                        quota = parity['experimantal_rsi_trading_quota']
+                        amount = get_amount_to_buy(quota, parity['symbol'])
+                        logger.save({"zone": "sell", "price":close, "amount": amount, "quota": quota}, "experimantal_rsi_trading")
+                        state["experimantal_rsi_trading_bought"] = False
+                        update_state_file(file_name, 'experimantal_rsi_trading_bought', False)
 
 async def run_parities():
 

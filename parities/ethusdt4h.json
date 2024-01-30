@@ -4,6 +4,8 @@
     "interval": "4h",
     "start": "320 hours ago UTC",
     "rsi": true,
+    "experimantal_rsi_trading": true,
+    "experimantal_rsi_trading_quota": 10000,
     "lower_rsi_bounds": [30,20],
     "upper_rsi_bounds": [80],
     "rsi_states": ["h1","n","l1","l2"],
