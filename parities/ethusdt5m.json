@@ -2,17 +2,18 @@
     "is_parity_active": true,
     "symbol": "ETHUSDT",
     "interval": "5m",
-    "start": "200 minutes ago UTC",
+    "start": "400 minutes ago UTC",
     "rsi": true,
     "lower_rsi_bounds": [20],
     "upper_rsi_bounds": [80],
     "rsi_states": ["h1","n","l1"],
-    "pmax": false,
+    "pmax": true,
     "bbands": true,
     "atr_multiplier": 3,
     "moving_average": "sma",
     "atr_length": 10,
     "ma_length": 9,
     "pmax_states": ["l", "p", "n"],
-    "pmax_percantage": 1.01
+    "pmax_percantage": 1.002,
+    "pmax_candle_reset": 4
 }
