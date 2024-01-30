@@ -132,6 +132,7 @@ async def main(df, parity, task_id, file_name, state, rsi_states):
                     if state['pmax'] != pmax_state:
                         if state['pmax'] == 'n' and pmax_state == 'l':
                             if pmax_candle_counter == 0:
+                                pmax_candle_counter += 1
                                 logging.info(f"pmax_prev_state -> {state['pmax']}, pmax_state -> {pmax_state}, symbol -> {parity['symbol']}, interval -> {parity['interval']}, pmax -> {pmax}, ma -> {pmax_df.iloc[-1,-3]}, close -> {close}")
                                 msg = f"🟪🟪🟪 *{parity['symbol']} - {parity['interval']}* - Price is on PMAX = {pmax:.2f} 🟪🟪🟪"
                                 await telegram_bot_sendtext(msg)
@@ -141,6 +142,7 @@ async def main(df, parity, task_id, file_name, state, rsi_states):
 
                         if state['pmax'] == 'p' and pmax_state == 'l':
                             if pmax_candle_counter == 0:
+                                pmax_candle_counter += 1
                                 logging.info(f"pmax_prev_state -> {state['pmax']}, pmax_state -> {pmax_state}, symbol -> {parity['symbol']}, interval -> {parity['interval']}, pmax -> {pmax}, ma -> {pmax_df.iloc[-1,-3]}, close -> {close}")
                                 msg = f"🟪🟪🟪 *{parity['symbol']} - {parity['interval']}* - Price is on PMAX = {pmax:.2f} 🟪🟪🟪"
                                 await telegram_bot_sendtext(msg)
