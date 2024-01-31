@@ -52,7 +52,7 @@ async def main(df, parity, task_id, file_name, state, rsi_states):
 
     SYMBOL = parity['symbol']
     INTERVAL = parity['interval']
-    logger = Logger(f"{parity['symbol']}{parity['interval']}.json")
+    logger = Logger(f"{parity['symbol']}{parity['interval']}")
     client = await AsyncClient.create()
     bm = BinanceSocketManager(client)
     ts = bm.kline_socket(SYMBOL, interval=INTERVAL)
@@ -207,7 +207,7 @@ async def main(df, parity, task_id, file_name, state, rsi_states):
                         logging.info(f"buying for -> rsi_value -> {rsi_value}, symbol -> {parity['symbol']}, interval -> {parity['interval']}, close -> {close}")
                         quota = parity['experimantal_rsi_trading_quota']
                         amount = get_amount_to_buy(quota, parity['symbol'])
-                        logger.save({"zone": "buy", "price":close, "amount": amount, "quota": quota}, "experimantal_rsi_trading")
+                        await logger.save({"zone": "buy", "price":close, "amount": amount, "quota": quota,  "strategy": "rsi"})
                         state["experimantal_rsi_trading_bought"] = True
                         update_state_file(file_name, 'experimantal_rsi_trading_bought', True)
 
@@ -216,7 +216,7 @@ async def main(df, parity, task_id, file_name, state, rsi_states):
                         logging.info(f"selling for -> rsi_value -> {rsi_value}, symbol -> {parity['symbol']}, interval -> {parity['interval']}, close -> {close}")
                         quota = parity['experimantal_rsi_trading_quota']
                         amount = get_amount_to_buy(quota, parity['symbol'])
-                        logger.save({"zone": "sell", "price":close, "amount": amount, "quota": quota}, "experimantal_rsi_trading")
+                        await logger.save({"zone": "sell", "price":close, "amount": amount, "quota": quota, "strategy": "rsi"})
                         state["experimantal_rsi_trading_bought"] = False
                         update_state_file(file_name, 'experimantal_rsi_trading_bought', False)
 
