@@ -78,7 +78,7 @@ async def main(df, parity, task_id, file_name, state, rsi_states):
                 if is_n_to_l_notif_sent == True:
                     pmax_candle_counter += 1
                     # update state file
-                    if pmax_candle_counter == parity["pmax_candle_reset"] - 1:
+                    if pmax_candle_counter == parity["pmax_candle_reset"]:
                         is_n_to_l_notif_sent = False
                         pmax_candle_counter = 0
                         # update state file
@@ -186,7 +186,7 @@ async def main(df, parity, task_id, file_name, state, rsi_states):
 
                 else:
                     bbands_state = "n"
-                    
+
                 if state['bbands'] != bbands_state:
                     if state["bbands_open_time"] != df.iloc[-1]['open_time']:
                         logging.info(f"bbands_state -> {bbands_state}, symbol -> {parity['symbol']}, interval -> {parity['interval']}, lowerband -> {lowerband.iloc[-1]}, close -> {df.iloc[-1]['close']}")

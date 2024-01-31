@@ -85,14 +85,13 @@ const HoverableCard = styled(Card)`
     }
 `;
 
-export default function Parities() {
+export default function Parities({ parities, setParities}) {
   const [open, setOpen] = React.useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = React.useState(false);
   const [restartModalOpen, setRestartModalOpen] = React.useState(false);
   const [canSubmit, setCanSubmit] = React.useState(false);
   const [textData, setTextData] = React.useState('');
   const [selectedCard, setSelectedCard] = React.useState(null);
-  const [parities, setParities] = React.useState([]);
   const [isAddParity, setIsAddParity] = React.useState(false);
 
   const handleOpen = (index) => {
@@ -139,30 +138,7 @@ export default function Parities() {
     }
   };
 
-  React.useEffect(() => {
-    // fetch parities
-    async function getParities() {
-      const token = new Cookies().get('token');
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/list_parities`,
-        {
-          headers: {
-            'Authorization': `Bearer ${token}` // Use appropriate authentication scheme and token format
-            // If you're using a different type of authentication, adjust the header accordingly
-          }
-        });
-      const data = await response.json();
-      const code = response.status;
-      if (code === 200) {
-        const newParities = data.map((parity) => {
-          return { ...parity, id: v4() };
-        }
-        );
-        setParities(newParities);
-      }
-    }
-    getParities();
 
-  }, []);
 
   const handleSave = async () => {
     const token = new Cookies().get('token');
