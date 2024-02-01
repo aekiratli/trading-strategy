@@ -129,7 +129,7 @@ async def main(df, parity, task_id, file_name, state, rsi_states):
                     df['low'] = df['low'].astype(float)
                     df['close'] = df['close'].astype(float)
                     pmax_df = PMAX(df, length=9, MAtype=4, src=2)
-                    pmax = float(pmax_df.iloc[-1,-2])
+                    pmax = float(pmax_df.iloc[-2,-2])
                 close = float(df.iloc[-1]['close'])
 
                 # check buy signal

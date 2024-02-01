@@ -48,7 +48,7 @@ const grey = {
 const TextareaAutosize = styled(BaseTextareaAutosize)(
   ({ theme }) => `
   box-sizing: border-box;
-  width: 500px;
+  width: 320px;
   font-family: 'IBM Plex Sans', sans-serif;
   font-size: 0.875rem;
   font-weight: 400;
@@ -136,9 +136,9 @@ export default function Parities({ parities, setParities}) {
 
   const getStatusColor = (is_parity_active) => {
     if (is_parity_active === false) {
-      return '#ff9e3e';
+      return 'red';
     } else {
-      return '#3e9fff ';
+      return 'green';
     }
   };
 
