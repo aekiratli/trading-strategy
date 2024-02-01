@@ -8,6 +8,7 @@ import TableCell from '@mui/material/TableCell';
 import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
+import { timestampToReadableDate } from '@/utils/dates';
 
 const style = {
   position: 'absolute',
@@ -23,11 +24,28 @@ const style = {
   p: 4,
 };
 
+function calculateProfit(transactions) {
+  var profit = 0;
+
+  for (var i = 0; i < transactions.length; i++) {
+      var transaction = transactions[i];
+
+      if (transaction.zone === "buy") {
+          profit -= transaction.price * transaction.amount;
+      } else if (transaction.zone === "sell") {
+          profit += transaction.price * transaction.amount;
+      }
+  }
+
+  return profit;
+}
+
 export default function TradingOverview({ parities }) {
   const STRATEGIES = process.env.NEXT_PUBLIC_STRATEGIES.split(',');
   const [filteredParities, setFilteredParities] = React.useState(parities);
   const [isLogsModalOpen, setIsLogsModalOpen] = React.useState(false);
   const [logs, setLogs] = React.useState(null);
+  const [is400, setIs400] = React.useState(false);
 
   React.useEffect(() => {
     if (!parities) {
@@ -64,6 +82,12 @@ export default function TradingOverview({ parities }) {
       });
     const data = await response.json();
     setIsLogsModalOpen(true);
+    // if code is 400, show error message
+    if (response.status === 400) {
+      setIs400(true)
+      return;
+    }
+
 
     if (data) {
       const newLogs = [];
@@ -72,7 +96,8 @@ export default function TradingOverview({ parities }) {
           newLogs.push(log);
         }
       });
-      setLogs(data);
+      setLogs(newLogs);
+      setIs400(false);
     }
   }
 
@@ -111,7 +136,7 @@ export default function TradingOverview({ parities }) {
         aria-describedby="modal-modal-description"
       >
         <Box sx={style}>
-          {logs && (
+          {logs && !is400 && (
             <TableContainer>
               <Table sx={{ minWidth: 650 }} aria-label="simple table">
                 <TableHead>
@@ -129,7 +154,7 @@ export default function TradingOverview({ parities }) {
                       sx={{ backgroundColor: log.zone === 'buy' ? 'green' : 'red'}}
                     >
                       <TableCell component="th" scope="row">
-                        {log.time}
+                        {timestampToReadableDate(log.timestamp)}
                       </TableCell>
                       <TableCell align="right">{log.zone}</TableCell>
                       <TableCell align="right">{log.price}</TableCell>
@@ -139,6 +164,16 @@ export default function TradingOverview({ parities }) {
                 </TableBody>
               </Table>
             </TableContainer>
+          )}
+          {logs && !is400 && (
+            <Typography style={{alignContent:'center', textAlign:'center', paddingTop: 10}} variant="h5" component="div">
+              Profit: {calculateProfit(logs)}
+            </Typography>
+          )}
+          {is400 && (
+            <Typography variant="h5" component="div">
+              There is no logs for this strategy.
+            </Typography>
           )}
         </Box>
       </Modal>

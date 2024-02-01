@@ -200,26 +200,46 @@ async def main(df, parity, task_id, file_name, state, rsi_states):
                             msg = f"🟥🟥📉 *{parity['symbol']} - {parity['interval']}* Price = {float(df.iloc[-1]['close']):.2f} is lower than Bollinger Band - Lower Band = {lowerband.iloc[-1]:.2f} 🟥🟥📉"
                             await telegram_bot_sendtext(msg)
 
-            if parity["experimantal_rsi_trading"] == True and parity["rsi"] == True:
+            if parity["rsi_trading"] == True and parity["rsi"] == True:
                 rsi_value = rsi.iloc[-1]
-                if rsi_value < 30 and state["experimantal_rsi_trading_bought"] == False:
+                if rsi_value < 30 and state["rsi_trading_bought"] == False:
                         close = float(df.iloc[-1]['close'])
                         logging.info(f"buying for -> rsi_value -> {rsi_value}, symbol -> {parity['symbol']}, interval -> {parity['interval']}, close -> {close}")
-                        quota = parity['experimantal_rsi_trading_quota']
+                        quota = parity['rsi_trading_quota']
                         amount = get_amount_to_buy(quota, parity['symbol'])
-                        await logger.save({"zone": "buy", "price":close, "amount": amount, "quota": quota,  "strategy": "rsi"})
-                        state["experimantal_rsi_trading_bought"] = True
-                        update_state_file(file_name, 'experimantal_rsi_trading_bought', True)
+                        await logger.save({"zone": "buy", "price":close, "amount": amount, "quota": quota,  "strategy": "rsi_trading"})
+                        state["rsi_trading_bought"] = True
+                        update_state_file(file_name, 'rsi_trading_bought', True)
 
-                if rsi_value > 80 and state["experimantal_rsi_trading_bought"] == True:
+                if rsi_value > 80 and state["rsi_trading_bought"] == True:
                         close = float(df.iloc[-1]['close'])
                         logging.info(f"selling for -> rsi_value -> {rsi_value}, symbol -> {parity['symbol']}, interval -> {parity['interval']}, close -> {close}")
-                        quota = parity['experimantal_rsi_trading_quota']
+                        quota = parity['rsi_trading_quota']
                         amount = get_amount_to_buy(quota, parity['symbol'])
-                        await logger.save({"zone": "sell", "price":close, "amount": amount, "quota": quota, "strategy": "rsi"})
-                        state["experimantal_rsi_trading_bought"] = False
-                        update_state_file(file_name, 'experimantal_rsi_trading_bought', False)
+                        await logger.save({"zone": "sell", "price":close, "amount": amount, "quota": quota, "strategy": "rsi_trading"})
+                        state["rsi_trading_bought"] = False
+                        update_state_file(file_name, 'rsi_trading_bought', False)
 
+            if parity["pmax_trading"] == True and parity["pmax"] == True:
+                zone = pmax_df.iloc[-1,-1]
+                if zone == "down" and state["pmax_trading_bought"] == False:
+                    close = float(df.iloc[-1]['close'])
+                    quota = parity['pmax_trading_quota']
+                    amount = get_amount_to_buy(quota, parity['symbol'])
+                    logging.info(f"buying for -> pmax_zone -> {zone}, symbol -> {parity['symbol']}, interval -> {parity['interval']}, close -> {close}")
+                    await logger.save({"zone": "buy", "price":close, "amount": amount, "quota": quota, "strategy": "pmax_trading"})
+                    state["pmax_trading_bought"] = True
+                    update_state_file(file_name, 'pmax_trading_bought', True)
+
+                if zone == "up" and state["pmax_trading_bought"] == True:
+                    close = float(df.iloc[-1]['close'])
+                    quota = parity['pmax_trading_quota']
+                    amount = get_amount_to_buy(quota, parity['symbol'])
+                    logging.info(f"selling for -> pmax_zone -> {zone}, symbol -> {parity['symbol']}, interval -> {parity['interval']}, close -> {close}")
+                    await logger.save({"zone": "sell", "price":close, "amount": amount, "quota": quota, "strategy": "pmax_trading"})
+                    state["pmax_trading_bought"] = False
+                    update_state_file(file_name, 'pmax_trading_bought', False)
+                
 async def run_parities():
 
     # create tasks for each parity

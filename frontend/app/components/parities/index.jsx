@@ -15,7 +15,8 @@ const style = {
   top: '50%',
   left: '50%',
   transform: 'translate(-50%, -50%)',
-  height: 'auto',
+  height: '100%',
+  overflow: 'scroll',
   bgcolor: 'background.paper',
   border: '2px solid #000',
   boxShadow: 24,
@@ -47,7 +48,7 @@ const grey = {
 const TextareaAutosize = styled(BaseTextareaAutosize)(
   ({ theme }) => `
   box-sizing: border-box;
-  width: 320px;
+  width: 500px;
   font-family: 'IBM Plex Sans', sans-serif;
   font-size: 0.875rem;
   font-weight: 400;
@@ -55,7 +56,10 @@ const TextareaAutosize = styled(BaseTextareaAutosize)(
   padding: 8px 12px;
   border-radius: 8px;
   margin-bottom: 16px;
+  height: 100%;
   color: white;
+  overflow: auto;
+  resize: vertical;
   background: ${grey[900]};
   border: 1px solid ${theme?.palette?.mode === 'dark' ? grey[700] : grey[200]};
   box-shadow: 0px 2px 2px ${theme?.palette?.mode === 'dark' ? grey[900] : grey[50]};
