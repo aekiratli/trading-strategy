@@ -15,7 +15,8 @@ const style = {
   top: '50%',
   left: '50%',
   transform: 'translate(-50%, -50%)',
-  height: 'auto',
+  height: '100%',
+  overflow: 'scroll',
   bgcolor: 'background.paper',
   border: '2px solid #000',
   boxShadow: 24,
@@ -47,7 +48,7 @@ const grey = {
 const TextareaAutosize = styled(BaseTextareaAutosize)(
   ({ theme }) => `
   box-sizing: border-box;
-  width: 320px;
+  width: 500px;
   font-family: 'IBM Plex Sans', sans-serif;
   font-size: 0.875rem;
   font-weight: 400;
@@ -55,7 +56,10 @@ const TextareaAutosize = styled(BaseTextareaAutosize)(
   padding: 8px 12px;
   border-radius: 8px;
   margin-bottom: 16px;
+  height: 100%;
   color: white;
+  overflow: auto;
+  resize: vertical;
   background: ${grey[900]};
   border: 1px solid ${theme?.palette?.mode === 'dark' ? grey[700] : grey[200]};
   box-shadow: 0px 2px 2px ${theme?.palette?.mode === 'dark' ? grey[900] : grey[50]};
@@ -85,14 +89,13 @@ const HoverableCard = styled(Card)`
     }
 `;
 
-export default function Parities() {
+export default function Parities({ parities, setParities}) {
   const [open, setOpen] = React.useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = React.useState(false);
   const [restartModalOpen, setRestartModalOpen] = React.useState(false);
   const [canSubmit, setCanSubmit] = React.useState(false);
   const [textData, setTextData] = React.useState('');
   const [selectedCard, setSelectedCard] = React.useState(null);
-  const [parities, setParities] = React.useState([]);
   const [isAddParity, setIsAddParity] = React.useState(false);
 
   const handleOpen = (index) => {
@@ -139,30 +142,7 @@ export default function Parities() {
     }
   };
 
-  React.useEffect(() => {
-    // fetch parities
-    async function getParities() {
-      const token = new Cookies().get('token');
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/list_parities`,
-        {
-          headers: {
-            'Authorization': `Bearer ${token}` // Use appropriate authentication scheme and token format
-            // If you're using a different type of authentication, adjust the header accordingly
-          }
-        });
-      const data = await response.json();
-      const code = response.status;
-      if (code === 200) {
-        const newParities = data.map((parity) => {
-          return { ...parity, id: v4() };
-        }
-        );
-        setParities(newParities);
-      }
-    }
-    getParities();
 
-  }, []);
 
   const handleSave = async () => {
     const token = new Cookies().get('token');

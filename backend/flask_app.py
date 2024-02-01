@@ -20,6 +20,8 @@ app.config['PYTHONANYWHERE_TOKEN'] = os.getenv('PYTHONANYWHERE_TOKEN')
 app.config['WORKDIR'] = os.getenv('WORKDIR')
 app.config['JWT_SECRET_KEY'] =  os.getenv('JWT_SECRET_KEY')
 app.config['ADMIN_PASSWORD'] = os.getenv('ADMIN_PASSWORD')
+app.config['LOG_PATH'] = os.getenv('LOG_PATH')
+
 
 # NON GLOBAL
 pythonanywhere_host = "eu.pythonanywhere.com"
@@ -58,75 +60,6 @@ def list_parities():
         parities.append(resp.json())
     return jsonify(parities), 200
 
-    # demo = [{
-    #     "symbol": "BNBUSDT",
-    #     "atr_length": 10,
-    #     "atr_multiplier": 3,
-    #     "bbands": True,
-    #     "interval": "15m",
-    #     "is_parity_active": True,
-    #     "lower_rsi_bounds": [
-    #         30,
-    #         20
-    #     ],
-    #     "ma_length": 9,
-    #     "moving_average": "sma",
-    #     "pmax": True,
-    #     "pmax_candle_reset": 4,
-    #     "pmax_percantage": 1.003,
-    #     "pmax_states": [
-    #         "l",
-    #         "p",
-    #         "n"
-    #     ],
-    #     "rsi": True,
-    #     "rsi_states": [
-    #         "h1",
-    #         "n",
-    #         "l1",
-    #         "l2"
-    #     ],
-    #     "start": "40 hours ago UTC",
-        
-    #     "upper_rsi_bounds": [
-    #         80
-    #     ]
-    # },
-    # {
-    #     "atr_length": 10,
-    #             "symbol": "ARBUSDT",
-    #     "atr_multiplier": 3,
-    #     "bbands": True,
-    #     "interval": "15m",
-    #     "is_parity_active": True,
-    #     "lower_rsi_bounds": [
-    #         30,
-    #         20
-    #     ],
-    #     "ma_length": 9,
-    #     "moving_average": "sma",
-    #     "pmax": True,
-    #     "pmax_candle_reset": 4,
-    #     "pmax_percantage": 1.003,
-    #     "pmax_states": [
-    #         "l",
-    #         "p",
-    #         "n"
-    #     ],
-    #     "rsi": True,
-    #     "rsi_states": [
-    #         "h1",
-    #         "n",
-    #         "l1",
-    #         "l2"
-    #     ],
-    #     "start": "40 hours ago UTC",
-    #     "upper_rsi_bounds": [
-    #         80
-    #     ]
-    # }]
-    # return demo
-
 @app.route('/update_parity/<string:parity>', methods=['POST'])
 @jwt_required()
 def create_or_update_parity(parity):
@@ -161,23 +94,6 @@ def delete_parity(parity):
         return jsonify({"msg": "Parity deleted"}), 200
     else:
         return jsonify({"msg": "Something went wrong"}), 500
-    
-# @app.route('/list_always_on_tasks')
-# @jwt_required()
-# def list_always_on_tasks():
-#     resp = requests.get(
-#         urljoin(api_base, "always_on"),
-#         headers={"Authorization": "Token {api_token}".format(api_token=app.config['PYTHONANYWHERE_TOKEN'])})
-#     return resp.json()
-
-# @app.route('/restart_always_on_task/<int:id>')
-# @jwt_required()
-# def restart_always_on_task(id):
-#     resp = requests.post(
-#         urljoin(api_base, "always_on/{id}/restart/".format(id=id)),
-#         headers={"Authorization": "Token {api_token}".format(api_token=app.config['PYTHONANYWHERE_TOKEN'])}
-# )
-#     return resp.json()
 
 @app.route('/restart')
 @jwt_required()
@@ -193,6 +109,21 @@ def restart():
             headers={"Authorization": "Token {api_token}".format(api_token=app.config['PYTHONANYWHERE_TOKEN'])}
         )
     return jsonify({"msg": "Restarted"}), 200
+
+@app.route('/logs/<parity>')
+@jwt_required()
+def logs(parity):
+    parity = parity + '.json'
+    resp = requests.get(
+            urljoin(api_base, "files/path/home/{username}/{path}/{file}".format(username=app.config['PYTHONANYWHERE_USERNAME'], path=app.config["LOG_PATH"],file=parity)),
+            headers={"Authorization": "Token {api_token}".format(api_token=app.config['PYTHONANYWHERE_TOKEN'])}
+        )
+    msg = resp.json()
+    # check if msg has details attr
+    if 'detail' in msg:
+        return jsonify({"msg": "file missing"}), 400
+    else:
+        return jsonify(resp.json()), 200
 
 # if __name__ == '__main__':
 #     app.run(debug=True, port=5005)

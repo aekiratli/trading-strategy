@@ -61,7 +61,7 @@ def update_state_file(file_name, state, state_value):
         
 def initialize_state_files(file_names):
     # create state directory if it doesn't exist
-    data = {"rsi": "n", "pmax": "n", "bbands": "n", "experimantal_rsi_trading_bought": False, "is_n_to_l_notif_sent": False, "pmax_candle_counter": 0}
+    data = {"rsi": "n", "pmax": "n", "bbands": "n", "rsi_trading_bought": False,"pmax_trading_bought": False, "is_n_to_l_notif_sent": False, "pmax_candle_counter": 0}
 
     if not os.path.exists(STATE_PATH):
         os.makedirs(STATE_PATH)

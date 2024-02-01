@@ -15,12 +15,13 @@ import ListItemText from '@mui/material/ListItemText';
 import Toolbar from '@mui/material/Toolbar';
 import FormatListNumberedRtlIcon from '@mui/icons-material/FormatListNumberedRtl';
 import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
-import NotificationsIcon from '@mui/icons-material/Notifications';
 import Parities from "./components/parities";
 import { ChevronRight as ChevronRightIcon } from '@mui/icons-material';
-import { Icon } from "@mui/material";
 import IconButton from '@mui/material/IconButton';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
+import TradingOverview from "./components/trading_overview";
+import Cookies from 'universal-cookie';
+import { v4 } from "uuid";
 
 const darkTheme = createTheme({
   palette: {
@@ -32,6 +33,7 @@ export default function Home() {
 
   const [selectedComponent, setSelectedComponent] = React.useState(0);
   const [drawerWidth, setDrawerWidth] = React.useState(300);
+  const [parities, setParities] = React.useState([]);
 
   const auth = useAuth();
 
@@ -51,6 +53,31 @@ export default function Home() {
     else setDrawerWidth(300);
 
   }
+
+  React.useEffect(() => {
+    // fetch parities
+    async function getParities() {
+      const token = new Cookies().get('token');
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/list_parities`,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}` // Use appropriate authentication scheme and token format
+            // If you're using a different type of authentication, adjust the header accordingly
+          }
+        });
+      const data = await response.json();
+      const code = response.status;
+      if (code === 200) {
+        const newParities = data.map((parity) => {
+          return { ...parity, id: v4() };
+        }
+        );
+        setParities(newParities);
+      }
+    }
+    getParities();
+
+  }, []);
 
   return (
     <ThemeProvider theme={darkTheme}>
@@ -92,15 +119,12 @@ export default function Home() {
           </IconButton>
           <Divider />
           <List>
-            {['Parities', 'Trading Overview', 'Notification Logs', 'Trading Logs',].map((text, index) => (
+            {['Parities', 'Trading Overview'].map((text, index) => (
               <ListItem key={text} disablePadding>
                 <ListItemButton onClick={() => { handleItemMenu(index) }}>
                   <ListItemIcon>
                     {index === 0 && <FormatListNumberedRtlIcon />}
                     {index === 1 && <AttachMoneyIcon />}
-                    {index === 2 && <NotificationsIcon />}
-                    {index === 3 && <NotificationsIcon />}
-
                   </ListItemIcon>
                   <ListItemText primary={text} />
                 </ListItemButton>
@@ -114,7 +138,9 @@ export default function Home() {
           sx={{ flexGrow: 1, bgcolor: 'background.default', p: 3 }}
         >
           {/* <Toolbar /> */}
-          {selectedComponent === 0 && <Parities />}
+          {selectedComponent === 0 && <Parities parities={parities} setParities={setParities}/>}
+          {selectedComponent === 1 && <TradingOverview parities={parities}/>}
+
         </Box>
       </Box>
     </ThemeProvider>
