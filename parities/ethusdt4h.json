@@ -1,5 +1,5 @@
 {
-    "is_parity_active": true,
+    "is_parity_active": false,
     "symbol": "ETHUSDT",
     "interval": "4h",
     "start": "320 hours ago UTC",
@@ -8,6 +8,10 @@
     "rsi_trading_buy_limit": 50,
     "rsi_trading_sell_percentage": 1.002,
     "rsi_trading_quota": 10000,
+    "rsi_bbands": true,
+    "rsi_bbands_quota": 10000,
+    "rsi_bbands_buy_limit": 50,
+    "rsi_bbands_percentages": [0.95,1.05],
     "lower_rsi_bounds": [30,20],
     "upper_rsi_bounds": [80],
     "rsi_states": ["h1","n","l1","l2"],
@@ -20,6 +24,7 @@
     "pmax_states": ["l", "p", "n"],
     "pmax_percantage": 1.025,
     "pmax_candle_reset": 4,
-    "pmax_bbands_trading": true,    
-    "pmax_bbands_trading_quota": 10000
+    "pmax_bbands_trading": true,
+    "pmax_bbands_percentages": [1,1.01],
+    "pmax_bbands_quota": 10000
 }
