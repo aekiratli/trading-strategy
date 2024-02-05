@@ -201,24 +201,37 @@ async def main(df, parity, task_id, file_name, state, rsi_states):
                             await telegram_bot_sendtext(msg)
 
             if parity["rsi_trading"] == True and parity["rsi"] == True:
+
                 rsi_value = rsi.iloc[-1]
-                if rsi_value < 30 and state["rsi_trading_bought"] == False:
-                        close = float(df.iloc[-1]['close'])
+                close = float(df.iloc[-1]['close'])
+
+                if rsi_value <= parity["rsi_trading_buy_limit"] and state["rsi_trading_bought"] == False:
+                        
                         logging.info(f"buying for -> rsi_value -> {rsi_value}, symbol -> {parity['symbol']}, interval -> {parity['interval']}, close -> {close}")
                         quota = parity['rsi_trading_quota']
                         amount = get_amount_to_buy(quota, parity['symbol'])
                         await logger.save({"zone": "buy", "price":close, "amount": amount, "quota": quota,  "strategy": "rsi_trading"})
+                        await telegram_bot_sendtext(f"*MARKET BUY - RSI - {parity['symbol']}-{parity['symbol']}* Price = {close}, Amount = {amount}", True)
                         state["rsi_trading_bought"] = True
+                        state["rsi_trading_bought_amount"] = amount
+                        state["rsi_trading_buy_price"] = close
                         update_state_file(file_name, 'rsi_trading_bought', True)
+                        update_state_file(file_name, 'rsi_trading_buy_price', close)
+                        update_state_file(file_name, 'rsi_trading_bought_amount', amount)
 
-                if rsi_value > 80 and state["rsi_trading_bought"] == True:
-                        close = float(df.iloc[-1]['close'])
+                if close >= state["rsi_trading_buy_price"] * parity["rsi_trading_sell_percentage"]  and state["rsi_trading_bought"] == True:
+                        
                         logging.info(f"selling for -> rsi_value -> {rsi_value}, symbol -> {parity['symbol']}, interval -> {parity['interval']}, close -> {close}")
                         quota = parity['rsi_trading_quota']
-                        amount = get_amount_to_buy(quota, parity['symbol'])
+                        amount = state["rsi_trading_bought_amount"]
                         await logger.save({"zone": "sell", "price":close, "amount": amount, "quota": quota, "strategy": "rsi_trading"})
+                        await telegram_bot_sendtext(f"*LIMIT SELL ORDER - RSI - {parity['symbol']}-{parity['symbol']}* Price = {close}, Amount = {amount}", True)
                         state["rsi_trading_bought"] = False
+                        state["rsi_trading_buy_price"] = 0
+                        state["rsi_trading_bought_amount"] = 0
                         update_state_file(file_name, 'rsi_trading_bought', False)
+                        update_state_file(file_name, 'rsi_trading_buy_price', 0)
+                        update_state_file(file_name, 'rsi_trading_bought_amount', 0)
 
             if parity["pmax_trading"] == True and parity["pmax"] == True:
                 zone = pmax_df.iloc[-1,-1]

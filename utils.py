@@ -11,6 +11,7 @@ client = Client("","")
 
 TELEGRAM_KEY = os.getenv("TELEGRAM_KEY")
 CHAT_ID = os.getenv("CHAT_ID")
+TRADING_CHAT_ID = os.getenv("TRADING_CHAT_ID")
 PARITIES_PATH = os.getenv("PARITIES_PATH")
 STATE_PATH = os.getenv("STATE_PATH")
 
@@ -25,10 +26,16 @@ class NpEncoder(json.JSONEncoder):
         return super(NpEncoder, self).default(obj)
 
 # Function to send a message to a Telegram user or group using aoidhttp
-async def telegram_bot_sendtext(msg):
-
+async def telegram_bot_sendtext(msg, is_trade=False):
+    
     bot_token = TELEGRAM_KEY
-    bot_chatID = CHAT_ID
+
+    if not is_trade:
+        bot_chatID = CHAT_ID
+        return
+    else:
+        bot_chatID = TRADING_CHAT_ID
+
     send_text = 'https://api.telegram.org/bot' + bot_token + '/sendMessage?chat_id=' + bot_chatID + '&parse_mode=Markdown&text=' + msg
     async with aiohttp.ClientSession() as session:
         async with session.get(send_text) as resp:
@@ -61,7 +68,16 @@ def update_state_file(file_name, state, state_value):
         
 def initialize_state_files(file_names):
     # create state directory if it doesn't exist
-    data = {"rsi": "n", "pmax": "n", "bbands": "n", "rsi_trading_bought": False,"pmax_trading_bought": False, "is_n_to_l_notif_sent": False, "pmax_candle_counter": 0}
+    data = {"rsi": "n",
+            "pmax": "n", 
+            "bbands": "n", 
+            "rsi_trading_bought": False,
+            "pmax_bbands_trading_bought": False, 
+            "is_n_to_l_notif_sent": False, 
+            "rsi_trading_buy_price": 0,
+            "rsi_trading_bought_amount": 0,
+            "pmax_candle_counter": 0
+            }
 
     if not os.path.exists(STATE_PATH):
         os.makedirs(STATE_PATH)
