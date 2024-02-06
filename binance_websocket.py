@@ -203,11 +203,13 @@ async def main(df, parity, task_id, file_name, state, rsi_states):
                             await telegram_bot_sendtext(msg)
             # Trading strategies
             close = float(df.iloc[-1]['close'])
+            # round close to 4 decimal places
+            close = round(close, 4)
             rsi_value = rsi.iloc[-1]
             lowerband = lowerband.iloc[-1]
             zone = pmax_df.iloc[-1,-1]
             state = await pmax_bbands(parity, state, file_name, logger, zone, lowerband, pmax, close)
-            state = await rsi_bbands(parity, state, file_name, logger, rsi_value, close, lowerband)
+            state = await rsi_bbands(parity, state, file_name, logger, lowerband, rsi_value, close)
             state = await rsi_bbands_alt(parity, state, file_name, logger, lowerband, rsi_value, close)
             state = await rsi_trading(parity, state, file_name, logger, rsi_value, close)
             state = await rsi_trading_alt(parity, state, file_name, logger, rsi_value, close)
