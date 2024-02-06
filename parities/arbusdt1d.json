@@ -32,7 +32,7 @@
     "pmax_states": ["l", "p", "n"],
     "pmax_percantage": 1.10,
     "pmax_candle_reset": 4,
-    "pmax_bbands_trading": false,
+    "pmax_bbands": false,
     "pmax_bbands_percentages": [1,1.01],
     "pmax_bbands_quota": 10000
 }
