@@ -201,16 +201,17 @@ async def main(df, parity, task_id, file_name, state, rsi_states):
             
             close = float(df.iloc[-1]['close'])
             rsi_value = rsi.iloc[-1]
+            lowerband = lowerband.iloc[-1]
 
             if parity["rsi_trading"] == True and parity["rsi"] == True:
 
                 if rsi_value <= parity["rsi_trading_buy_limit"] and state["rsi_trading_bought"] == False:
                         
-                        logging.info(f"buying for -> rsi_value -> {rsi_value}, symbol -> {parity['symbol']}, interval -> {parity['interval']}, close -> {close}")
+                        logging.info(f"buying for rsi_trading -> rsi_value -> {rsi_value}, symbol -> {parity['symbol']}, interval -> {parity['interval']}, close -> {close}")
                         quota = parity['rsi_trading_quota']
                         amount = get_amount_to_buy(quota, parity['symbol'])
                         await logger.save({"zone": "buy", "price":close, "amount": amount, "quota": quota,  "strategy": "rsi_trading"})
-                        await telegram_bot_sendtext(f"*RSI - BUY - {parity['symbol']}-{parity['symbol']}* Price = {close}, Amount = {amount}", True)
+                        await telegram_bot_sendtext(f"*RSI - MARKET BUY - {parity['symbol']}-{parity['symbol']}* Price = {close}, Amount = {amount}, RSI = {rsi_value}\nRSI - LIMIT ORDER SELL - {parity['symbol']}-{parity['symbol']}* Price = {state["rsi_trading_buy_price"] * parity["rsi_trading_sell_percentage"] }, Amount = {amount}", True)
                         state["rsi_trading_bought"] = True
                         state["rsi_trading_bought_amount"] = amount
                         state["rsi_trading_buy_price"] = close
@@ -220,7 +221,7 @@ async def main(df, parity, task_id, file_name, state, rsi_states):
 
                 if close >= state["rsi_trading_buy_price"] * parity["rsi_trading_sell_percentage"]  and state["rsi_trading_bought"] == True:
                         
-                        logging.info(f"selling for -> rsi_value -> {rsi_value}, symbol -> {parity['symbol']}, interval -> {parity['interval']}, close -> {close}")
+                        logging.info(f"selling for rsi_trading -> rsi_value -> {rsi_value}, symbol -> {parity['symbol']}, interval -> {parity['interval']}, close -> {close}")
                         quota = parity['rsi_trading_quota']
                         amount = state["rsi_trading_bought_amount"]
                         await logger.save({"zone": "sell", "price":close, "amount": amount, "quota": quota, "strategy": "rsi_trading"})
@@ -232,89 +233,160 @@ async def main(df, parity, task_id, file_name, state, rsi_states):
                         update_state_file(file_name, 'rsi_trading_buy_price', 0)
                         update_state_file(file_name, 'rsi_trading_bought_amount', 0)
 
+            if parity["rsi_trading_alt"] == True and parity["rsi"] == True:
+
+                if rsi_value <= parity["rsi_trading_alt_buy_limit"] and state["rsi_trading_alt_bought"] == False:
+                        
+                        logging.info(f"buying for -> rsi_value -> {rsi_value}, symbol -> {parity['symbol']}, interval -> {parity['interval']}, close -> {close}")
+                        quota = parity['rsi_trading_quota']
+                        amount = get_amount_to_buy(quota, parity['symbol'])
+                        await logger.save({"zone": "buy", "price":close, "amount": amount, "quota": quota,  "strategy": "rsi_alt_trading"})
+                        await telegram_bot_sendtext(f"*RSI ALT - BUY - {parity['symbol']}-{parity['symbol']}* Price = {close}, Amount = {amount}", True)
+                        state["rsi_trading_alt_bought"] = True
+                        state["rsi_trading_alt_bought_amount"] = amount
+                        state["rsi_trading_alt_buy_price"] = close
+                        update_state_file(file_name, 'rsi_trading_alt_bought', True)
+                        update_state_file(file_name, 'rsi_trading_alt_buy_price', close)
+                        update_state_file(file_name, 'rsi_trading_alt_bought_amount', amount)
+
+                if close >= state["rsi_trading_alt_buy_price"] * parity["rsi_trading_alt_sell_percentage"]  and state["rsi_trading_alt_bought"] == True:
+                        
+                        logging.info(f"selling for -> rsi_value -> {rsi_value}, symbol -> {parity['symbol']}, interval -> {parity['interval']}, close -> {close}")
+                        quota = parity['rsi_trading_alt_quota']
+                        amount = state["rsi_trading_alt_bought_amount"]
+                        await logger.save({"zone": "sell", "price":close, "amount": amount, "quota": quota, "strategy": "rsi_alt_trading"})
+                        await telegram_bot_sendtext(f"*RSI ALT - SELL - {parity['symbol']}-{parity['symbol']}* Price = {close}, Amount = {amount}", True)
+                        state["rsi_trading_alt_bought"] = False
+                        state["rsi_trading_alt_buy_price"] = 0
+                        state["rsi_trading_alt_bought_amount"] = 0
+                        update_state_file(file_name, 'rsi_trading_alt_bought', False)
+                        update_state_file(file_name, 'rsi_trading_alt_buy_price', 0)
+                        update_state_file(file_name, 'rsi_trading_alt_bought_amount', 0)
+
             if parity["rsi_bbands"] == True and parity["rsi"] == True and parity["bbands"] == True:
 
-                if rsi_value <= parity["rsi_bbands_buy_limit"] and close > lowerband and state["rsi_bbands_bought"] == False:
+                if rsi_value <= parity["rsi_bbands_buy_limit"] and close > lowerband and state["rsi_bbands_has_ordered"] == False:
                         
-                        buy, sell = parity["rsi_bbands_percentages"].split(",")
+                        buy, sell = parity["rsi_bbands_percentages"][0], parity["rsi_bbands_percentages"][1]
                         buy_price = close * buy
                         sell_price = close * sell
                         logging.info(f"buying for rsi_bbands -> rsi_value -> {rsi_value}, bbands -> {lowerband}, symbol -> {parity['symbol']}, interval -> {parity['interval']}, close -> {close}")
                         quota = parity['rsi_bbands_quota']
                         amount = get_amount_to_buy(quota, parity['symbol'])
-                        await logger.save({"bbands": lowerband, "rsi":rsi , "price":close, "amount": amount, "quota": quota,  "strategy": "rsi_bbands_trading"})
-                        await telegram_bot_sendtext(f"*RSI-BBANDS - BUY - {parity['symbol']}-{parity['symbol']}* Buy Price = {buy_price}, Amount = {amount}", True)
+                        await telegram_bot_sendtext(f"*RSI-BBANDS - LIMIT BUY ORDER- {parity['symbol']}-{parity['symbol']}* Buy Price = {buy_price}, Amount = {amount}/n
+                                                      *RSI-BBANDS - LIMIT SELL ORDER - {parity['symbol']}-{parity['symbol']}* Sell Price = {sell_price}, Amount = {amount}", True)
+                        
+                        state =  update_state_file_and_state(file_name, 'rsi_bbands_bought_amount', state, amount)
+                        state =  update_state_file_and_state(file_name, 'rsi_bbands_buy_price', state, buy_price)
+                        state =  update_state_file_and_state(file_name, 'rsi_bbands_sell_price', state, sell_price)
+                        state =  update_state_file_and_state(file_name, 'rsi_bbands_has_ordered', state, True)
 
-                        state["rsi_bbands_bought"] = True
-                        state["rsi_bbands_bought_amount"] = amount
-                        state["rsi_bbands_buy_price"] = buy_price
-                        state["rsi_bbands_sell_price"] = sell_price
+                if close <= state["rsi_bbands_buy_price"] and state["rsi_bbands_has_ordered"] == True:
+                            
+                            quota = parity['rsi_bbands_quota']
+                            amount = state["rsi_bbands_bought_amount"]
+                            await logger.save({"bbands": lowerband, "rsi": rsi_value , "price":close, "amount": amount, "quota": quota,  "strategy": "rsi_bbands_trading"})
+                            await telegram_bot_sendtext(f"*RSI-BBANDS - LIMIT BUY ORDER COMPLETED - {parity['symbol']}-{parity['symbol']}* Sell Price = {close}, Amount = {amount}", True)
+                            state =  update_state_file_and_state(file_name, 'rsi_bbands_bought', state, True)
 
-                        update_state_file(file_name, 'rsi_bbands_bought', True)
-                        update_state_file(file_name, 'rsi_trading_buy_price', buy_price)
-                        update_state_file(file_name, 'rsi_bbands_bought_amount', amount)
-                        update_state_file(file_name, 'rsi_bbands_sell_price', sell_price)
-                
                 # sell if price is higher than sell price
                 if close >= state["rsi_bbands_sell_price"] and state["rsi_bbands_bought"] == True:
                         
                         logging.info(f"selling for rsi_bbands -> rsi_value -> {rsi_value}, bbands -> {lowerband}, symbol -> {parity['symbol']}, interval -> {parity['interval']}, close -> {close}")
                         quota = parity['rsi_bbands_quota']
                         amount = state["rsi_bbands_bought_amount"]
-                        await logger.save({"bbands": lowerband, "rsi":rsi , "price":close, "amount": amount, "quota": quota,  "strategy": "rsi_bbands_trading"})
-                        await telegram_bot_sendtext(f"*RSI-BBANDS - SELL - {parity['symbol']}-{parity['symbol']}* Sell Price = {close}, Amount = {amount}", True)
+                        await logger.save({"bbands": lowerband, "rsi":rsi_value , "price":close, "amount": amount, "quota": quota,  "strategy": "rsi_bbands_trading"})
+                        await telegram_bot_sendtext(f"*RSI-BBANDS - LIMIT SELL ORDER COMPLETED - {parity['symbol']}-{parity['symbol']}* Sell Price = {close}, Amount = {amount}", True)
 
-                        state["rsi_bbands_bought"] = False
-                        state["rsi_bbands_bought_amount"] = 0
-                        state["rsi_bbands_buy_price"] = 0
-                        state["rsi_bbands_sell_price"] = 0
+                        state = update_state_file_and_state(file_name, 'rsi_bbands_bought', state, False)
+                        state = update_state_file_and_state(file_name, 'rsi_bbands_bought_amount', state, 0)
+                        state = update_state_file_and_state(file_name, 'rsi_bbands_buy_price', state, 0)
+                        state = update_state_file_and_state(file_name, 'rsi_bbands_sell_price', state, 0)
+                        state = update_state_file_and_state(file_name, 'rsi_bbands_has_ordered', state, False)
 
-                        update_state_file(file_name, 'rsi_bbands_bought', False)
-                        update_state_file(file_name, 'rsi_bbands_bought_amount', 0)
-                        update_state_file(file_name, 'rsi_bbands_buy_price', 0)
-                        update_state_file(file_name, 'rsi_bbands_sell_price', 0)
+            if parity["rsi_bbands_alt"] == True and parity["rsi"] == True and parity["bbands"] == True:
 
+                if rsi_value <= parity["rsi_bbands_alt_buy_limit"] and close > lowerband and state["rsi_bbands_alt_has_ordered"] == False:
+                        
+                        buy, sell = parity["rsi_bbands_alt_percentages"][0], parity["rsi_bbands_alt_percentages"][1]
+                        buy_price = close * buy
+                        sell_price = close * sell
+                        logging.info(f"buying for rsi_bbands -> rsi_value -> {rsi_value}, bbands -> {lowerband}, symbol -> {parity['symbol']}, interval -> {parity['interval']}, close -> {close}")
+                        quota = parity['rsi_bbands_alt_quota']
+                        amount = get_amount_to_buy(quota, parity['symbol'])
+                        await telegram_bot_sendtext(f"*RSI-BBANDS-ALT - LIMIT BUY ORDER- {parity['symbol']}-{parity['symbol']}* Buy Price = {buy_price}, Amount = {amount}/n
+                                                      *RSI-BBANDS-ALT - LIMIT SELL ORDER - {parity['symbol']}-{parity['symbol']}* Sell Price = {sell_price}, Amount = {amount}", True)
+                        
+                        state =  update_state_file_and_state(file_name, 'rsi_bbands_alt_bought_amount', state, amount)
+                        state =  update_state_file_and_state(file_name, 'rsi_bbands_alt_buy_price', state, buy_price)
+                        state =  update_state_file_and_state(file_name, 'rsi_bbands_alt_sell_price', state, sell_price)
+                        state =  update_state_file_and_state(file_name, 'rsi_bbands_alt_has_ordered', state, True)
+
+                if close <= state["rsi_bbands_alt_buy_price"] and state["rsi_bbands_alt_has_ordered"] == True:
+                            
+                            quota = parity['rsi_bbands_alt_quota']
+                            amount = state["rsi_bbands_alt_bought_amount"]
+                            await logger.save({"bbands": lowerband, "rsi": rsi_value , "price":close, "amount": amount, "quota": quota,  "strategy": "rsi_bbands_trading"})
+                            await telegram_bot_sendtext(f"*RSI-BBANDS-ALT - LIMIT BUY ORDER COMPLETED - {parity['symbol']}-{parity['symbol']}* Sell Price = {close}, Amount = {amount}", True)
+                            state =  update_state_file_and_state(file_name, 'rsi_bbands_alt_bought', state, True)
+
+                # sell if price is higher than sell price
+                if close >= state["rsi_bbands_alt_sell_price"] and state["rsi_bbands_alt_bought"] == True:
+                        
+                        logging.info(f"selling for rsi_bbands_alt -> rsi_value -> {rsi_value}, bbands -> {lowerband}, symbol -> {parity['symbol']}, interval -> {parity['interval']}, close -> {close}")
+                        quota = parity['rsi_bbands_alt_quota']
+                        amount = state["rsi_bbands_alt_bought_amount"]
+                        await logger.save({"bbands": lowerband, "rsi":rsi_value , "price":close, "amount": amount, "quota": quota,  "strategy": "rsi_bbands_trading"})
+                        await telegram_bot_sendtext(f"*RSI-BBANDS-ALT - LIMIT SELL ORDER COMPLETED - {parity['symbol']}-{parity['symbol']}* Sell Price = {close}, Amount = {amount}", True)
+
+                        state = update_state_file_and_state(file_name, 'rsi_bbands_alt_bought', state, False)
+                        state = update_state_file_and_state(file_name, 'rsi_bbands_alt_bought_amount', state, 0)
+                        state = update_state_file_and_state(file_name, 'rsi_bbands_alt_buy_price', state, 0)
+                        state = update_state_file_and_state(file_name, 'rsi_bbands_alt_sell_price', state, 0)
+                        state = update_state_file_and_state(file_name, 'rsi_bbands_alt_has_ordered', state, False)
+                        
             if parity["pmax_bbands"] == True and parity["pmax"] == True and parity["bbands"] == True:
+
                 zone = pmax_df.iloc[-1,-2]
-                if zone == "up" and state["pmax_trading_bought"] == False and lowerband >= pmax and state["pmax_bbands_bought"] == False:
-                    buy, sell = parity["pmax_bbands_percentages"].split(",")
+
+                if zone == "up" and lowerband >= pmax and state["pmax_bbands_has_ordered"] == False:
+
+                    buy, sell = parity["rsi_bbands_percentages"][0], parity["rsi_bbands_percentages"][1]
                     buy_price = pmax * buy
                     sell_price = pmax * sell
                     logging.info(f"buying for pmax_bbands -> pmax -> {pmax}, bbands -> {lowerband}, symbol -> {parity['symbol']}, interval -> {parity['interval']}, close -> {close}")
                     quota = parity['pmax_bbands_quota']
                     amount = get_amount_to_buy(quota, parity['symbol'])
                     await logger.save({"bbands": lowerband, "pmax": pmax, "price":close, "amount": amount, "quota": quota,  "strategy": "pmax_bbands_trading"})
-                    await telegram_bot_sendtext(f"*PMAX-BBANDS - BUY - {parity['symbol']}-{parity['symbol']}* Buy Price = {buy_price}, Amount = {amount}", True)
+                    await telegram_bot_sendtext(f"*PMAX-BBANDS - LIMIT BUY ORDER - {parity['symbol']}-{parity['symbol']}* Buy Price = {buy_price}, Amount = {amount}/n
+                                                *PMAX-BBANDS - LIMIT SELL ORDER - {parity['symbol']}-{parity['symbol']}* Sell Price = {sell_price}, Amount = {amount}", True)
+                    
+                    state = update_state_file_and_state(file_name, 'pmax_bbands_has_ordered', state, True)
+                    state = update_state_file_and_state(file_name, 'pmax_bbands_bought_amount', state, amount)
+                    state = update_state_file_and_state(file_name, 'pmax_bbands_buy_price', state, buy_price)
+                    state = update_state_file_and_state(file_name, 'pmax_bbands_sell_price', state, sell_price)
 
-                    state["pmax_bbands_bought"] = True
-                    state["pmax_bbands_bought_amount"] = amount
-                    state["pmax_bbands_buy_price"] = buy_price
-                    state["pmax_bbands_sell_price"] = sell_price
-
-                    update_state_file(file_name, 'pmax_bbands_bought', True)
-                    update_state_file(file_name, 'pmax_bbands_bought_amount', amount)
-                    update_state_file(file_name, 'pmax_bbands_buy_price', buy_price)
-                    update_state_file(file_name, 'pmax_bbands_sell_price', sell_price)
-
+                if close <= state["pmax_bbands_buy_price"] and state["pmax_bbands_has_ordered"] == True:
+                    quota = parity['pmax_bbands_quota']
+                    amount = state["pmax_bbands_bought_amount"]
+                    await logger.save({"bbands": lowerband, "pmax": pmax, "price":close, "amount": amount, "quota": quota,  "strategy": "pmax_bbands_trading"})
+                    await telegram_bot_sendtext(f"*PMAX-BBANDS - LIMIT BUY ORDER COMPLETED - {parity['symbol']}-{parity['symbol']}* Buy Price = {close}, Amount = {amount}", True)
+                    state = update_state_file_and_state(file_name, 'pmax_bbands_bought', state, True)
 
                 if close >= state["pmax_bbands_sell_price"] and state["pmax_bbands_bought"] == True:
+
                     logging.info(f"selling for pmax_bbands -> pmax -> {pmax}, bbands -> {lowerband}, symbol -> {parity['symbol']}, interval -> {parity['interval']}, close -> {close}")
                     quota = parity['pmax_bbands_quota']
                     amount = state["pmax_bbands_bought_amount"]
                     await logger.save({"bbands": lowerband, "pmax": pmax, "price":close, "amount": amount, "quota": quota,  "strategy": "pmax_bbands_trading"})
                     await telegram_bot_sendtext(f"*PMAX-BBANDS - SELL - {parity['symbol']}-{parity['symbol']}* Sell Price = {close}, Amount = {amount}", True)
-
-                    state["pmax_bbands_bought"] = False
-                    state["pmax_bbands_bought_amount"] = 0
-                    state["pmax_bbands_buy_price"] = 0
-                    state["pmax_bbands_sell_price"] = 0
-
-                    update_state_file(file_name, 'pmax_bbands_bought', False)
-                    update_state_file(file_name, 'pmax_bbands_bought_amount', 0)
-                    update_state_file(file_name, 'pmax_bbands_buy_price', 0)
-                    update_state_file(file_name, 'pmax_bbands_sell_price', 0)
                     
-                
+                    state = update_state_file_and_state(file_name, 'pmax_bbands_bought', state, False)
+                    state = update_state_file_and_state(file_name, 'pmax_bbands_bought_amount', state, 0)
+                    state = update_state_file_and_state(file_name, 'pmax_bbands_buy_price', state, 0)
+                    state = update_state_file_and_state(file_name, 'pmax_bbands_sell_price', state, 0)
+                    state = update_state_file_and_state(file_name, 'pmax_bbands_has_ordered', state, False)
+
 async def run_parities():
 
     # create tasks for each parity

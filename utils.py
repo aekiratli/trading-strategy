@@ -72,17 +72,27 @@ def initialize_state_files(file_names):
             "pmax": "n", 
             "bbands": "n", 
             "rsi_trading_bought": False,
+            "rsi_trading_alt_bought": False,
             "pmax_bbands_bought": False,
             "pmax_bbands_buy_price": 0,
             "pmax_bbands_bought_amount": 0,
             "pmax_bbands_sell_price": 0,
+            "pmax_bbands_has_ordered": False,
             "rsi_bbands_buy_price": 0,
+            "rsi_bbands_alt_buy_price": 0,
+            "rsi_bbands_has_ordered": False,
+            "rsi_bbands_alt_has_ordered": False,
             "rsi_bbands_bought_amount": 0,
+            "rsi_bbands_alt_bought_amount": 0,
             "rsi_bbands_sell_price": 0,
+            "rsi_bbands_alt_sell_price": 0,
             "rsi_bbands_bought": False, 
+            "rsi_bbands_alt_bought": False,
             "is_n_to_l_notif_sent": False, 
             "rsi_trading_buy_price": 0,
+            "rsi_trading_alt_buy_price": 0,
             "rsi_trading_bought_amount": 0,
+            "rsi_trading_alt_bought_amount": 0,
             "pmax_candle_counter": 0
             }
 
@@ -164,3 +174,9 @@ def get_amount_to_buy(quota, symbol):
     # use decimal  of 4
     amount_to_buy = round(amount_to_buy, 4)
     return amount_to_buy
+
+def update_state_file_and_state(file_name, state_key ,state, state_value):
+    update_state_file(file_name, state_key, state_value)
+    # update key from state
+    state[state_key] = state_value
+    return state
