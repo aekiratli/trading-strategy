@@ -1,6 +1,6 @@
 {
     "is_parity_active": true,
-    "symbol": "BTCUSDT",
+    "symbol": "MATICUSDT",
     "interval": "1h",
     "start": "80 hours ago UTC",
     "rsi": true,

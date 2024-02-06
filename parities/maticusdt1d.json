@@ -1,6 +1,6 @@
 {
     "is_parity_active": true,
-    "symbol": "ARBUSDT",
+    "symbol": "MATICUSDT",
     "interval": "1d",
     "start": "80 days ago UTC",
     "rsi": true,
