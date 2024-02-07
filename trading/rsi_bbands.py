@@ -32,7 +32,7 @@ async def rsi_bbands_alt(parity, state, file_name, logger, lowerband, rsi_value,
             state = update_state_file_and_state(
                 file_name, 'rsi_bbands_alt_has_ordered', state, True)
 
-        if close <= state["rsi_bbands_alt_buy_price"] and state["rsi_bbands_alt_has_ordered"] == True:
+        if close <= state["rsi_bbands_alt_buy_price"] and state["rsi_bbands_alt_has_ordered"] == True and state["rsi_bbands_alt_bought"] == False:
 
             quota = parity['rsi_bbands_alt_quota']
             amount = state["rsi_bbands_alt_bought_amount"]
@@ -91,7 +91,7 @@ async def rsi_bbands(parity, state, file_name, logger, lowerband, rsi_value, clo
             state = update_state_file_and_state(
                 file_name, 'rsi_bbands_has_ordered', state, True)
 
-        if close <= state["rsi_bbands_buy_price"] and state["rsi_bbands_has_ordered"] == True:
+        if close <= state["rsi_bbands_buy_price"] and state["rsi_bbands_has_ordered"] == True and state["rsi_bbands_bought"] == False:
 
             quota = parity['rsi_bbands_quota']
             amount = state["rsi_bbands_bought_amount"]

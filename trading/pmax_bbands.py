@@ -35,13 +35,12 @@ async def pmax_bbands(parity, state, file_name, logger, zone, lowerband, pmax, c
             state = update_state_file_and_state(
                 file_name, 'pmax_bbands_sell_price', state, sell_price)
 
-        if close <= state["pmax_bbands_buy_price"] and state["pmax_bbands_has_ordered"] == True:
+        if close <= state["pmax_bbands_buy_price"] and state["pmax_bbands_has_ordered"] == True and state["pmax_bbands_bought"] == False:
             quota = parity['pmax_bbands_quota']
             amount = state["pmax_bbands_bought_amount"]
             await logger.save({"zone":"buy","bbands": lowerband, "pmax": pmax, "price": close, "amount": amount, "quota": quota,  "strategy": "pmax_bbands"})
             await telegram_bot_sendtext(f"* {parity['symbol']}-{parity['interval']} - PMAX-BBANDS - LIMIT BUY ORDER COMPLETED* Buy Price = {close}, Amount = {amount}", True)
-            state = update_state_file_and_state(
-                file_name, 'pmax_bbands_bought', state, True)
+            state = update_state_file_and_state(file_name, 'pmax_bbands_bought', state, True)
 
         if close >= state["pmax_bbands_sell_price"] and state["pmax_bbands_bought"] == True:
 
