@@ -22,6 +22,10 @@ import { ThemeProvider, createTheme } from '@mui/material/styles';
 import TradingOverview from "./components/trading_overview";
 import Cookies from 'universal-cookie';
 import { v4 } from "uuid";
+import AccountBalanceIcon from '@mui/icons-material/AccountBalance';
+import PersonIcon from '@mui/icons-material/Person';
+import Account from "./components/account";
+import Orders from "./components/orders";
 
 const darkTheme = createTheme({
   palette: {
@@ -119,12 +123,14 @@ export default function Home() {
           </IconButton>
           <Divider />
           <List>
-            {['Parities', 'Trading Overview'].map((text, index) => (
+            {['Parities', 'Trading Overview', 'Orders', 'Account Info'].map((text, index) => (
               <ListItem key={text} disablePadding>
                 <ListItemButton onClick={() => { handleItemMenu(index) }}>
                   <ListItemIcon>
                     {index === 0 && <FormatListNumberedRtlIcon />}
                     {index === 1 && <AttachMoneyIcon />}
+                    {index === 2 && <AccountBalanceIcon />}
+                    {index === 3 && <PersonIcon />}
                   </ListItemIcon>
                   <ListItemText primary={text} />
                 </ListItemButton>
@@ -140,6 +146,9 @@ export default function Home() {
           {/* <Toolbar /> */}
           {selectedComponent === 0 && <Parities parities={parities} setParities={setParities}/>}
           {selectedComponent === 1 && <TradingOverview parities={parities}/>}
+          {selectedComponent === 2 && <Orders parities={parities}/>}
+          {selectedComponent === 3 && <Account parities={parities}/>}
+
 
         </Box>
       </Box>

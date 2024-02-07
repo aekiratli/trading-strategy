@@ -15,11 +15,10 @@ const style = {
   top: '50%',
   left: '50%',
   transform: 'translate(-50%, -50%)',
-  height:'100%',
-  display:'block',
+  height: '80%',
+  display: 'block',
   bgcolor: 'background.paper',
   border: '2px solid #000',
-  overflow:'scroll',
   boxShadow: 24,
   p: 4,
 };
@@ -28,16 +27,16 @@ function calculateProfit(transactions) {
   var profit = 0;
 
   for (var i = 0; i < transactions.length; i++) {
-      var transaction = transactions[i];
+    var transaction = transactions[i];
 
-      if (transaction.zone === "buy") {
-          profit -= transaction.price * transaction.amount;
-      } else if (transaction.zone === "sell") {
-          profit += transaction.price * transaction.amount;
-      }
+    if (transaction.zone === "buy") {
+      profit -= transaction.price * transaction.amount;
+    } else if (transaction.zone === "sell") {
+      profit += transaction.price * transaction.amount;
+    }
   }
-
-  return profit;
+  // round to 2 decimal places
+  return Math.round(profit * 100) / 100;
 }
 
 export default function TradingOverview({ parities }) {
@@ -46,6 +45,9 @@ export default function TradingOverview({ parities }) {
   const [isLogsModalOpen, setIsLogsModalOpen] = React.useState(false);
   const [logs, setLogs] = React.useState(null);
   const [is400, setIs400] = React.useState(false);
+  const [isCardClicked, setIsCardClicked] = React.useState(false);
+  const [selectedParity, setSelectedParity] = React.useState({});
+  const [selectedStrategy, setSelectedStrategy] = React.useState("null");
 
   React.useEffect(() => {
     if (!parities) {
@@ -67,8 +69,40 @@ export default function TradingOverview({ parities }) {
     setFilteredParities(newParities);
   }, [parities]);
 
+  const handleCardClick = async (parity) => {
+    console.log(parity);
+    setIsCardClicked(true);
+    setIsLogsModalOpen(true);
+    setSelectedParity(parity);
+    setSelectedStrategy("All Strategies");
+
+    const token = new Cookies().get('token');
+    const parityName = parity.symbol + parity.interval;
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/logs/${parityName}`,
+      {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`, // Use appropriate authentication scheme and token format
+          'Content-Type': 'application/json'
+          // If you're using a different type of authentication, adjust the header accordingly
+        },
+      });
+    const data = await response.json();
+    setIsLogsModalOpen(true);
+    // if code is 400, show error message
+    if (response.status === 400) {
+      setIs400(true)
+      return;
+    }
+    if (data) {
+      setLogs(data);
+      setIs400(false);
+    }
+  }
 
   const handleLogs = async (parity, strategy) => {
+    setSelectedParity(parity);
+    setSelectedStrategy(strategy);
     const token = new Cookies().get('token');
     const parityName = parity.symbol + parity.interval;
     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/logs/${parityName}`,
@@ -105,7 +139,13 @@ export default function TradingOverview({ parities }) {
     <Box style={{ backgroundColor: 'black' }}>
       <Box display="flex" flexWrap="wrap">
         {filteredParities.map((parity) => (
-          <Card key={parity.id} style={{ margin: '10px', width: '300px' }}>
+          <Card
+            key={parity.id}
+            style={{
+              margin: '10px',
+              width: '300px',
+            }}
+          >
             <CardContent>
               <Typography variant="h5" component="div">
                 {parity.symbol} - {parity.interval}
@@ -124,6 +164,13 @@ export default function TradingOverview({ parities }) {
                     )}
                   </Box>
                 ))}
+                <Button
+                  variant="contained"
+                  onClick={() => handleCardClick(parity)}
+                  style={{ margin: '5px' }}
+                >
+                  All Logs
+                </Button>
               </Typography>
             </CardContent>
           </Card>
@@ -131,11 +178,14 @@ export default function TradingOverview({ parities }) {
       </Box>
       <Modal
         open={isLogsModalOpen}
-        onClose={() => setIsLogsModalOpen(false)}
+        onClose={() => { setIsLogsModalOpen(false); setIsCardClicked(false); }}
         aria-labelledby="modal-modal-title"
         aria-describedby="modal-modal-description"
       >
         <Box sx={style}>
+          <Typography align="center" style={{ paddingBottom: '20px' }}>
+            {selectedParity?.symbol} - {selectedParity?.interval} - {selectedStrategy}
+          </Typography>
           {logs && !is400 && (
             <TableContainer>
               <Table sx={{ minWidth: 650 }} aria-label="simple table">
@@ -145,13 +195,14 @@ export default function TradingOverview({ parities }) {
                     <TableCell align="right">Zone</TableCell>
                     <TableCell align="right">Price</TableCell>
                     <TableCell align="right">Quantity</TableCell>
+                    {isCardClicked && <TableCell align="right">Strategy</TableCell>}
                   </TableRow>
                 </TableHead>
                 <TableBody>
                   {logs.map((log, index) => (
                     <TableRow
                       key={index}
-                      sx={{ backgroundColor: log.zone === 'buy' ? 'green' : 'red'}}
+                      sx={{ backgroundColor: log.zone === 'buy' ? 'green' : 'red' }}
                     >
                       <TableCell component="th" scope="row">
                         {timestampToReadableDate(log.timestamp)}
@@ -159,6 +210,7 @@ export default function TradingOverview({ parities }) {
                       <TableCell align="right">{log.zone}</TableCell>
                       <TableCell align="right">{log.price}</TableCell>
                       <TableCell align="right">{log.amount}</TableCell>
+                      {isCardClicked && <TableCell align="right">{log.strategy}</TableCell>}
                     </TableRow>
                   ))}
                 </TableBody>
@@ -166,7 +218,7 @@ export default function TradingOverview({ parities }) {
             </TableContainer>
           )}
           {logs && !is400 && (
-            <Typography style={{alignContent:'center', textAlign:'center', paddingTop: 10}} variant="h5" component="div">
+            <Typography style={{ alignContent: 'center', textAlign: 'center', paddingTop: 10 }} variant="h5" component="div">
               Profit: {calculateProfit(logs)}
             </Typography>
           )}

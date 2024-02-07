@@ -122,6 +122,8 @@ def logs(parity):
     # check if msg has details attr
     if 'detail' in msg:
         return jsonify({"msg": "file missing"}), 400
+    elif msg == {}:
+        return jsonify({"msg": "file empty"}), 400
     else:
         return jsonify(resp.json()), 200
 

@@ -15,8 +15,8 @@ const style = {
   top: '50%',
   left: '50%',
   transform: 'translate(-50%, -50%)',
-  height: '100%',
-  overflow: 'scroll',
+  height: 'auto',
+  maxHeight: '90%',
   bgcolor: 'background.paper',
   border: '2px solid #000',
   boxShadow: 24,
@@ -58,7 +58,7 @@ const TextareaAutosize = styled(BaseTextareaAutosize)(
   margin-bottom: 16px;
   height: 100%;
   color: white;
-  overflow: auto;
+  overflow-y: scroll;
   resize: vertical;
   background: ${grey[900]};
   border: 1px solid ${theme?.palette?.mode === 'dark' ? grey[700] : grey[200]};
@@ -89,7 +89,7 @@ const HoverableCard = styled(Card)`
     }
 `;
 
-export default function Parities({ parities, setParities}) {
+export default function Parities({ parities, setParities }) {
   const [open, setOpen] = React.useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = React.useState(false);
   const [restartModalOpen, setRestartModalOpen] = React.useState(false);
@@ -101,9 +101,10 @@ export default function Parities({ parities, setParities}) {
   const handleOpen = (index) => {
     setOpen(true);
     setSelectedCard(parities[index]);
-    setTextData(JSON.stringify(parities[index], null, 4));
+    // first attribute to show in the text area is symbol and interval
+    const { symbol, interval, ...rest } = parities[index];
+    setTextData(JSON.stringify({ symbol, interval, ...rest }, null, 4));
   };
-
   const handleAddParity = () => {
     setOpen(true);
     setTextData(JSON.stringify({ is_parity_active: true }, null, 4));
@@ -214,6 +215,7 @@ export default function Parities({ parities, setParities}) {
       const newParities = [...parities];
       newParities.splice(parities.indexOf(selectedCard), 1);
       setParities(newParities);
+
       handleClose();
       setDeleteModalOpen(false);
     }
@@ -267,7 +269,7 @@ export default function Parities({ parities, setParities}) {
           </HoverableCard>
         ))}
         <Card sx={{ minWidth: 275, margin: 2, minHeight: '220px' }}>
-          <div style={{ display: 'flex', height: '100%', flexDirection:'column', justifyContent: 'center', alignItems: 'center' }}>
+          <div style={{ display: 'flex', height: '100%', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
             <IconButton onClick={handleAddParity} size='large'>
               <AddIcon />
             </IconButton>
@@ -290,8 +292,11 @@ export default function Parities({ parities, setParities}) {
       >
         <Fade in={open}>
           <Box display='flex' flexDirection="column" sx={style}>
-            <TextareaAutosize onChange={onTextChange} value={textData} aria-label="empty textarea" />
-            <Button onClick={() => { isAddParity ? handleAdd() : handleSave() }} disabled={!canSubmit} variant="contained">{isAddParity ? 'Add and Restart' : 'Save and Restart'}</Button>
+            <Typography align="center" style={{ paddingBottom: '20px' }}>
+              {selectedCard?.symbol} - {selectedCard?.interval}
+            </Typography>
+            <TextareaAutosize maxRows={30} onChange={onTextChange} value={textData} aria-label="empty textarea" />
+            <Button onClick={() => { isAddParity ? handleAdd() : handleSave() }} disabled={!canSubmit} variant="contained">{isAddParity ? 'Add' : 'Save'}</Button>
             <Button onClick={() => { setDeleteModalOpen(true) }}>Delete</Button>
           </Box>
         </Fade>
