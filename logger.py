@@ -12,30 +12,40 @@ class Logger:
     def __init__(self, parity: str):
         self.parity = parity
         self.main_path = f'{LOG_PATH}/{self.parity}'
-        # create LOG_PATH if it doesn't exist
+        self.summary_path = f'{LOG_PATH}/summary.json'
+        
         if not os.path.exists(LOG_PATH):
             os.mkdir(LOG_PATH)
-
+        
+        if not os.path.exists(self.summary_path):
+            with open(self.summary_path, 'w') as file:
+                json.dump({}, file)
+        
     async def save(self, data):
-        # get timestamp as int
         ts = int(datetime.now().timestamp())
         file_name = f'{self.main_path}.json'
 
-        # Add timestamp to data
         data['timestamp'] = ts
 
-        async with asyncio.Lock():  # Use asyncio Lock to prevent concurrent access
-            # Check if file exists
+        async with asyncio.Lock():
             if os.path.exists(file_name):
-                # Read existing data from the file
                 with open(file_name, 'r') as file:
                     existing_data = json.load(file)
             else:
                 existing_data = []
 
-            # Append new data to existing data
             existing_data.append(data)
 
-            # Write the combined data back to the file
             with open(file_name, 'w') as file:
                 json.dump(existing_data, file, indent=2)
+
+            # Update tx count for parity in summary.json
+            summary_data = {}
+            if os.path.exists(self.summary_path):
+                with open(self.summary_path, 'r') as file:
+                    summary_data = json.load(file)
+
+            summary_data[self.parity] = summary_data.get(self.parity, 0) + 1
+
+            with open(self.summary_path, 'w') as file:
+                json.dump(summary_data, file, indent=2)

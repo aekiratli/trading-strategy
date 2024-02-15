@@ -14,6 +14,7 @@ CHAT_ID = os.getenv("CHAT_ID")
 TRADING_CHAT_ID = os.getenv("TRADING_CHAT_ID")
 PARITIES_PATH = os.getenv("PARITIES_PATH")
 STATE_PATH = os.getenv("STATE_PATH")
+UPDATE_PATH = os.getenv("UPDATE_PATH")
 
 class NpEncoder(json.JSONEncoder):
     def default(self, obj):
@@ -103,7 +104,28 @@ def initialize_state_files(file_names):
         if not os.path.exists(state_file_path):
             with open(state_file_path, 'w') as state_file:
                 json.dump(data, state_file, indent=2)
-                
+
+def initialize_update_files(file_names):
+    if not os.path.exists(UPDATE_PATH):
+        os.makedirs(UPDATE_PATH)
+    # create UPDATE file if it doesn't exist
+    for file_name in file_names:
+        update_file_path = f'{UPDATE_PATH}/{file_name}_update.json'
+        if not os.path.exists(update_file_path):
+            with open(update_file_path, 'w') as state_file:
+                json.dump({'should_update':False }, state_file, indent=2)
+
+def should_update_parity(file_name):
+    update_file_path = f'{UPDATE_PATH}/{file_name}_update.json'
+    with open(update_file_path, 'r') as update_file:
+        data = json.load(update_file)
+        return data['should_update']
+    
+def update_update_file(file_name, should_update):
+    update_file_path = f'{UPDATE_PATH}/{file_name}_update.json'
+    with open(update_file_path, 'w') as update_file:
+        json.dump({'should_update':should_update }, update_file, indent=2)
+
 def read_state_file(file_name) -> dict:
     state_file_path = f'{STATE_PATH}/{file_name}_state.json'
     with open(state_file_path, 'r') as state_file:

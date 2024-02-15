@@ -19,9 +19,22 @@ const style = {
   display: 'block',
   bgcolor: 'background.paper',
   border: '2px solid #000',
+  overflowY: 'scroll',
   boxShadow: 24,
   p: 4,
 };
+
+const ENUM_STRATEGIES = {
+  "rsi_trading": "RSI 21",
+  "rsi_trading_alt": "RSI 26",
+  "pmax_bbands": "Pmax - BBands",
+  "rsi_bbands": "RSI 21 - BBands",
+  "rsi_bbands_alt": "RSI 26 - BBands",
+}
+
+function getStrategyName(strategy) {
+  return ENUM_STRATEGIES[strategy];
+}
 
 function calculateProfit(transactions) {
   var profit = 0;
@@ -47,6 +60,7 @@ export default function TradingOverview({ parities }) {
   const [is400, setIs400] = React.useState(false);
   const [isCardClicked, setIsCardClicked] = React.useState(false);
   const [selectedParity, setSelectedParity] = React.useState({});
+  const [summary, setSummary] = React.useState([]);
   const [selectedStrategy, setSelectedStrategy] = React.useState("null");
 
   React.useEffect(() => {
@@ -68,6 +82,26 @@ export default function TradingOverview({ parities }) {
     });
     setFilteredParities(newParities);
   }, [parities]);
+
+  React.useEffect(() => {
+    // fetch parities
+    async function getSummary() {
+      const token = new Cookies().get('token');
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/logs/summary`,
+      {
+          headers: {
+            'Authorization': `Bearer ${token}` // Use appropriate authentication scheme and token format
+            // If you're using a different type of authentication, adjust the header accordingly
+          }
+        });
+      const data = await response.json();
+      const code = response.status;
+      if (code === 200) {
+        setSummary(data);
+      }
+    }
+    getSummary();
+  }, []);
 
   const handleCardClick = async (parity) => {
     console.log(parity);
@@ -135,6 +169,22 @@ export default function TradingOverview({ parities }) {
     }
   }
 
+  const handleSummary =  (parity) => {
+    const parityName = parity.symbol + parity.interval;
+        // Check if the summaryData is not null or undefined
+        if (summary && summary[parityName]) {
+          // Extract the total number of transactions for the given parity
+          const totalTransactions = summary[parityName];
+          // Display the total number of transactions
+          return totalTransactions;
+          // You can display this information in your frontend UI as needed
+      } else {
+          // If the parity is not found in the summaryData, display a message
+          return 0;
+          // You can handle this case in your frontend UI as needed
+      }
+  }
+
   return (
     <Box style={{ backgroundColor: 'black' }}>
       <Box display="flex" flexWrap="wrap">
@@ -159,7 +209,7 @@ export default function TradingOverview({ parities }) {
                         onClick={() => handleLogs(parity, strategy)}
                         style={{ margin: '5px' }}
                       >
-                        {strategy}
+                        {getStrategyName(strategy)}
                       </Button>
                     )}
                   </Box>
@@ -169,7 +219,7 @@ export default function TradingOverview({ parities }) {
                   onClick={() => handleCardClick(parity)}
                   style={{ margin: '5px' }}
                 >
-                  All Logs
+                  All Logs - {'('+handleSummary(parity) +')'}
                 </Button>
               </Typography>
             </CardContent>

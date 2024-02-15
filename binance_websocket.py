@@ -14,6 +14,7 @@ from logger import Logger
 from trading.pmax_bbands import pmax_bbands
 from trading.rsi_bbands import rsi_bbands, rsi_bbands_alt
 from trading.rsi import rsi_trading, rsi_trading_alt
+from trading.orders import Orders
 
 load_dotenv()
 warnings.filterwarnings('ignore')
@@ -56,6 +57,7 @@ async def main(df, parity, task_id, file_name, state, rsi_states):
     SYMBOL = parity['symbol']
     INTERVAL = parity['interval']
     logger = Logger(f"{parity['symbol']}{parity['interval']}")
+    orders = Orders(parity)
     client = await AsyncClient.create()
     bm = BinanceSocketManager(client)
     ts = bm.kline_socket(SYMBOL, interval=INTERVAL)
@@ -63,6 +65,11 @@ async def main(df, parity, task_id, file_name, state, rsi_states):
     async with ts as tscm:
         while True:
             res = await tscm.recv()
+
+            upd = should_update_parity(file_name)
+            if upd:
+                state = read_state_file(file_name)
+                update_update_file(file_name, False)
 
             if res['k']['x']:
                 # candle is closed, concat new candle to df
@@ -208,7 +215,7 @@ async def main(df, parity, task_id, file_name, state, rsi_states):
             rsi_value = rsi.iloc[-1]
             lowerband = lowerband.iloc[-1]
             zone = pmax_df.iloc[-1,-1]
-            state = await pmax_bbands(parity, state, file_name, logger, zone, lowerband, pmax, close)
+            state = await pmax_bbands(parity, state, file_name, logger, zone, lowerband, pmax, close,orders)
             state = await rsi_bbands(parity, state, file_name, logger, lowerband, rsi_value, close)
             state = await rsi_bbands_alt(parity, state, file_name, logger, lowerband, rsi_value, close)
             state = await rsi_trading(parity, state, file_name, logger, rsi_value, close)
@@ -220,6 +227,7 @@ async def run_parities():
     # create tasks for each parity
     parities, file_names = initialize_parities()
     initialize_state_files(file_names)
+    initialize_update_files(file_names)
     tasks = []
     task_id = 0
     for parity in parities:
