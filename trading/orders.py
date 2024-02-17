@@ -107,9 +107,9 @@ class Orders:
                         state = update_state_file_and_state(file_name, 'pmax_bbands_sell_id', state, "")
                     if order["strategy"] == "rsi_trading":
                         await telegram_bot_sendtext(f"* {order['symbol']}-{order['interval']} - RSI-TRADING - ORDER CANCELLED* Order ID = {id}", True)
-                        state = update_state_file_and_state(file_name, 'rsi_trading_bought', False)
-                        state = update_state_file_and_state(file_name, 'rsi_trading_buy_price', 0)
-                        state = update_state_file_and_state(file_name, 'rsi_trading_bought_amount', 0)
+                        state = update_state_file_and_state(file_name, 'rsi_trading_bought', state,False)
+                        state = update_state_file_and_state(file_name, 'rsi_trading_buy_price', state,0)
+                        state = update_state_file_and_state(file_name, 'rsi_trading_bought_amount', state,0)
                     if order["strategy"] == "rsi_trading_alt":
                         await telegram_bot_sendtext(f"* {order['symbol']}-{order['interval']} - RSI-TRADING-ALT - ORDER CANCELLED* Order ID = {id}", True)
                         state = update_state_file_and_state(file_name, 'rsi_trading_alt_bought', False)
