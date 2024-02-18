@@ -40,6 +40,7 @@ async def rsi_trading(parity, state, file_name, logger, rsi_value, close, orders
             state = update_state_file_and_state(file_name, 'rsi_trading_bought', state, False)
             state = update_state_file_and_state(file_name, 'rsi_trading_buy_price', state, 0)
             state = update_state_file_and_state(file_name, 'rsi_trading_bought_amount', state, 0)
+            state = update_state_file_and_state(file_name, 'rsi_trading_sell_id', state, "")
             await orders.complete_order(state["rsi_trading_sell_id"])
 
     return state
@@ -77,6 +78,7 @@ async def rsi_trading_alt(parity, state, file_name, logger, rsi_value, close, or
             state = update_state_file_and_state(file_name, 'rsi_trading_alt_bought', state, False)
             state = update_state_file_and_state(file_name, 'rsi_trading_alt_buy_price', state, 0)
             state = update_state_file_and_state(file_name, 'rsi_trading_alt_bought_amount', state, 0)
+            state = update_state_file_and_state(file_name, 'rsi_trading_alt_sell_id', state, "")
             await orders.complete_order(state["rsi_trading_alt_sell_id"])
 
     return state

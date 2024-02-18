@@ -72,6 +72,8 @@ async def pmax_bbands(parity, state, file_name, logger, zone, lowerband, pmax, c
                 file_name, 'pmax_bbands_sell_price', state, 0)
             state = update_state_file_and_state(
                 file_name, 'pmax_bbands_has_ordered', state, False)
+            state = update_state_file_and_state(
+                file_name, 'pmax_bbands_sell_id', state, "")
 
             orders.complete_order(state["pmax_bbands_sell_id"])
 
