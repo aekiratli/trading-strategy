@@ -164,20 +164,13 @@ def open_orders(status):
     # make sure status is open, cancelled or completed
     if status not in ['open', 'cancelled', 'completed']:
         return jsonify({"msg": "Bad status"}), 400
-    resp = requests.get(
-        urljoin(api_base, "files/path/home/{username}/{path}/{file}".format(
-            username=app.config['PYTHONANYWHERE_USERNAME'], path=app.config["ORDER_PATH"], file=f'{status}.json')),
-        headers={"Authorization": "Token {api_token}".format(
-            api_token=app.config['PYTHONANYWHERE_TOKEN'])}
-    )
-    msg = resp.json()
-    # check if msg has details attr
-    if 'detail' in msg:
-        return jsonify({"msg": "file missing"}), 400
-    elif msg == {}:
-        return jsonify({"msg": "file empty"}), 400
-    else:
-        return jsonify(resp.json()), 200
+    # load the file
+    path = f'{app.config["ORDER_PATH"]}/{status}.json'
+    with open(path, 'r') as file:
+        data = json.load(file)
+    if not data:
+        return jsonify({"msg": "No orders found"}), 404
+    return jsonify(data), 200
     
 @app.route('/orders/<string:id>/cancel')
 @jwt_required()
