@@ -216,10 +216,10 @@ async def main(df, parity, task_id, file_name, state, rsi_states):
             lowerband = lowerband.iloc[-1]
             zone = pmax_df.iloc[-1,-1]
             state = await pmax_bbands(parity, state, file_name, logger, zone, lowerband, pmax, close,orders)
-            state = await rsi_bbands(parity, state, file_name, logger, lowerband, rsi_value, close)
-            state = await rsi_bbands_alt(parity, state, file_name, logger, lowerband, rsi_value, close)
-            state = await rsi_trading(parity, state, file_name, logger, rsi_value, close)
-            state = await rsi_trading_alt(parity, state, file_name, logger, rsi_value, close)
+            state = await rsi_bbands(parity, state, file_name, logger, lowerband, rsi_value, close, orders)
+            state = await rsi_bbands_alt(parity, state, file_name, logger, lowerband, rsi_value, close, orders)
+            state = await rsi_trading(parity, state, file_name, logger, rsi_value, close,  orders)
+            state = await rsi_trading_alt(parity, state, file_name, logger, rsi_value, close, orders)
 
 
 async def run_parities():

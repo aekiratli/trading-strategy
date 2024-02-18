@@ -45,7 +45,7 @@ class Orders:
             'price': price,
             'action': action,
             'trade_id': 0,
-            'triggered_by': strategy,
+            'strategy': strategy,
             'id': id
         }
 
@@ -144,7 +144,7 @@ if __name__ == "__main__":
     state = read_state_file(file_names[2])
     parity = parities[2]
     orders = Orders(parity)
-    # id = str(uuid.uuid4())
-    # asyncio.run(orders.create_order(1, 2, 'buy', 'demo_strat2', 'limit', id))
-    id = "d5d7002d-4793-4148-9cd6-ee697b759d4c"
+    id = str(uuid.uuid4())
+    asyncio.run(orders.create_order(1, 2, 'buy', 'demo_strat2', 'limit', id))
+    #id = "d5d7002d-4793-4148-9cd6-ee697b759d4c"
     asyncio.run(orders.complete_order(id))

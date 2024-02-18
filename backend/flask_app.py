@@ -24,6 +24,9 @@ app.config['ADMIN_PASSWORD'] = os.getenv('ADMIN_PASSWORD')
 app.config['LOG_PATH'] = os.getenv('LOG_PATH')
 app.config['ORDER_PATH'] = os.getenv('ORDER_PATH')
 app.config['STATE_PATH'] = os.getenv('STATE_PATH')
+app.config['UPDATE_PATH'] = os.getenv('UPDATE_PATH')
+app.config['TELEGRAM_KEY'] = os.getenv('TELEGRAM_KEY')
+app.config['CHAT_ID'] = os.getenv('CHAT_ID')
 
 # NON GLOBAL
 pythonanywhere_host = "eu.pythonanywhere.com"
@@ -155,82 +158,15 @@ def logs(parity):
         return jsonify(resp.json()), 200
 
 
-@app.route('/orders/open')
+@app.route('/orders/<string:status>')
 @jwt_required()
-def open_orders():
-    return jsonify([
-        {
-            "timestamp": 1708012589,
-            "symbol": "ARBUSDT",
-            "interval": "1h",
-            "amount": 1,
-            "market_type": "limit",
-            "price": 2,
-            "action": "buy",
-            "trade_id": 0,
-            "triggered_by": "demo_strat2",
-            "id": "6e9f08b8-ca09-48e3-98b8-1d14742a0cb5"
-        },
-        {
-            "timestamp": 1708012590,
-            "symbol": "ARBUSDT",
-            "interval": "1h",
-            "amount": 1,
-            "market_type": "limit",
-            "price": 2,
-            "action": "buy",
-            "trade_id": 0,
-            "triggered_by": "demo_strat2",
-            "id": "4632bc10-392e-4550-aa0c-c89aeb3bae5e"
-        }
-    ]), 200
+def open_orders(status):
+    # make sure status is open, cancelled or completed
+    if status not in ['open', 'cancelled', 'completed']:
+        return jsonify({"msg": "Bad status"}), 400
     resp = requests.get(
         urljoin(api_base, "files/path/home/{username}/{path}/{file}".format(
-            username=app.config['PYTHONANYWHERE_USERNAME'], path=app.config["ORDER_PATH"], file='open.json')),
-        headers={"Authorization": "Token {api_token}".format(
-            api_token=app.config['PYTHONANYWHERE_TOKEN'])}
-    )
-    msg = resp.json()
-    # check if msg has details attr
-    if 'detail' in msg:
-        return jsonify({"msg": "file missing"}), 400
-    elif msg == {}:
-        return jsonify({"msg": "file empty"}), 400
-    else:
-        return jsonify(resp.json()), 200
-
-@app.route('/orders/completed')
-@jwt_required()
-def completed_orders():
-    return jsonify([
-        {
-            "timestamp": 1708012589,
-            "symbol": "ARBUSDT",
-            "interval": "1h",
-            "amount": 1,
-            "market_type": "limit",
-            "price": 2,
-            "action": "buy",
-            "trade_id": 0,
-            "triggered_by": "2",
-            "id": "6e9f08b8-ca09-48e3-98b8-1d14742a0cb5"
-        },
-        {
-            "timestamp": 1708012590,
-            "symbol": "ARBUSDT",
-            "interval": "1h",
-            "amount": 1,
-            "market_type": "limit",
-            "price": 2,
-            "action": "buy",
-            "trade_id": 0,
-            "triggered_by": "2",
-            "id": "4632bc10-392e-4550-aa0c-c89aeb3bae5e"
-        }
-    ]), 200
-    resp = requests.get(
-        urljoin(api_base, "files/path/home/{username}/{path}/{file}".format(
-            username=app.config['PYTHONANYWHERE_USERNAME'], path=app.config["ORDER_PATH"], file='completed.json')),
+            username=app.config['PYTHONANYWHERE_USERNAME'], path=app.config["ORDER_PATH"], file=f'{status}.json')),
         headers={"Authorization": "Token {api_token}".format(
             api_token=app.config['PYTHONANYWHERE_TOKEN'])}
     )
@@ -243,55 +179,11 @@ def completed_orders():
     else:
         return jsonify(resp.json()), 200
     
-@app.route('/orders/cancelled')
-@jwt_required()
-def cancelled_orders():
-    return jsonify([
-        {
-            "timestamp": 1708012589,
-            "symbol": "ARBUSDT",
-            "interval": "1h",
-            "amount": 1,
-            "market_type": "limit",
-            "price": 2,
-            "action": "buy",
-            "trade_id": 0,
-            "triggered_by": "1",
-            "id": "6e9f08b8-ca09-48e3-98b8-1d14742a0cb5"
-        },
-        {
-            "timestamp": 1708012590,
-            "symbol": "ARBUSDT",
-            "interval": "1h",
-            "amount": 1,
-            "market_type": "limit",
-            "price": 2,
-            "action": "buy",
-            "trade_id": 0,
-            "triggered_by": "1",
-            "id": "4632bc10-392e-4550-aa0c-c89aeb3bae5e"
-        }
-    ]), 200
-    resp = requests.get(
-        urljoin(api_base, "files/path/home/{username}/{path}/{file}".format(
-            username=app.config['PYTHONANYWHERE_USERNAME'], path=app.config["ORDER_PATH"], file='cancelled.json')),
-        headers={"Authorization": "Token {api_token}".format(
-            api_token=app.config['PYTHONANYWHERE_TOKEN'])}
-    )
-    msg = resp.json()
-    # check if msg has details attr
-    if 'detail' in msg:
-        return jsonify({"msg": "file missing"}), 400
-    elif msg == {}:
-        return jsonify({"msg": "file empty"}), 400
-    else:
-        return jsonify(resp.json()), 200
-    
-@app.route('/order/<string:id>/cancel', methods=['POST'])
+@app.route('/orders/<string:id>/cancel')
 @jwt_required()
 def cancel_order(id):
     def update_state_file(file_name, state, state_value):
-        state_file_path = f'{app.config['STATE_PATH']}/{file_name}_state.json'
+        state_file_path = f'{app.config["STATE_PATH"]}/{file_name}_state.json'
 
         try:
             # Read the existing state file
@@ -313,15 +205,21 @@ def cancel_order(id):
         except json.JSONDecodeError:
             # Handle the case where the file is not a valid JSON
             print(f'Error: {file_name}_state.json is not a valid JSON file.')
-
+    def update_update_file(file_name, should_update):
+        update_file_path = f'{app.config["UPDATE_PATH"]}/{file_name}_update.json'
+        with open(update_file_path, 'w') as update_file:
+            json.dump({'should_update':should_update }, update_file, indent=2)
     open_path = f'{app.config["ORDER_PATH"]}/open.json'
     cancelled_path = f'{app.config["ORDER_PATH"]}/cancelled.json'
 
     with open(open_path, 'r') as file:
         existing_data = json.load(file)
-
+    if not existing_data:
+        return jsonify({"msg": "No orders found"}), 404
+    order_found = False
     for order in existing_data:
         if order['id'] == id:
+            order_found = True
             with open(cancelled_path, 'r') as file:
                 cancelled_data = json.load(file)
             with open(cancelled_path, 'w') as file:
@@ -329,6 +227,7 @@ def cancel_order(id):
                 json.dump(cancelled_data, file, indent=2)
 
             file_name = order['symbol'] + order['interval']
+            update_update_file(file_name, True)
             if order["strategy"] == "pmax_bbands":
                 update_state_file(file_name, 'pmax_bbands_buy_id', "")
                 update_state_file(file_name, 'pmax_bbands_bought', False)
@@ -361,9 +260,15 @@ def cancel_order(id):
                 update_state_file(file_name, 'rsi_bbands_alt_has_ordered', False)
                 update_state_file(file_name, 'rsi_bbands_alt_sell_id', "")
                 update_state_file(file_name, 'rsi_bbands_alt_buy_id', "")
-
-        with open(open_path, 'w') as file:
-            json.dump([order for order in existing_data if order['id'] != id], file, indent=2)
+            with open(open_path, 'w') as file:
+                json.dump([order for order in existing_data if order['id'] != id], file, indent=2)
+        if order_found:
+            # send telegram message
+            requests.get(f'https://api.telegram.org/bot{app.config["TELEGRAM_KEY"]}/sendMessage?chat_id={app.config["CHAT_ID"]}&text=Order+ID%3A+{id}+cancelled')
+            return jsonify({"msg": "Order cancelled"}), 200
+        
+    return jsonify({"msg": "Order not found"}), 404
+        
 
 if __name__ == '__main__':
     app.run(debug=True, port=5005)
