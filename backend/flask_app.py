@@ -220,6 +220,8 @@ def cancel_order(id):
                 json.dump(cancelled_data, file, indent=2)
 
             file_name = order['symbol'] + order['interval']
+            # lowercasing
+            file_name = file_name.lower()
             update_update_file(file_name, True)
             if order["strategy"] == "pmax_bbands":
                 update_state_file(file_name, 'pmax_bbands_buy_id', "")
