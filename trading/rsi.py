@@ -59,7 +59,7 @@ async def rsi_trading_alt(parity, state, file_name, logger, rsi_value, close, or
             state = update_state_file_and_state(file_name, 'rsi_trading_alt_bought', state, True)
             state = update_state_file_and_state(file_name, 'rsi_trading_alt_buy_price', state, close)
             state = update_state_file_and_state(file_name, 'rsi_trading_alt_bought_amount', state, amount)
-            await telegram_bot_sendtext(f" *{parity['symbol']}-{parity['interval']} - RSI ALT - MARKET BUY* Price = {close}, Amount = {amount}, RSI = {rsi_value}%0A%0A *{parity['symbol']}-{parity['interval']} - RSI ALT - LIMIT ORDER SELL* Price = {sell_limit_price}, Amount = {amount}", True)
+            await telegram_bot_sendtext(f" *{parity['symbol']}-{parity['interval']} - RSI ALT - MARKET BUY* Price = {close}, Amount = {amount}, RSI = {rsi_value}%0A%0A *{parity['symbol']}-{parity['interval']} - RSI ALT - LIMIT ORDER SELL* Price = {close * parity['rsi_trading_sell_percentage']}, Amount = {amount}", True)
             sell_id = str(uuid.uuid4())
             state = update_state_file_and_state(file_name, 'rsi_trading_alt_sell_id', state, sell_id)
             await orders.create_order(amount, close, "sell", 'rsi_trading', 'limit', sell_id)
