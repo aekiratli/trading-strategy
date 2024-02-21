@@ -169,15 +169,14 @@ export default function TradingOverview({ parities }) {
     }
   }
 
-  const handleSummary =  (parity) => {
+  const handleSummary =  (parity, strategy) => {
     const parityName = parity.symbol + parity.interval;
         // Check if the summaryData is not null or undefined
-        if (summary && summary[parityName]) {
+        if (summary && summary[parityName] && summary[parityName][strategy]) {
           // Extract the total number of transactions for the given parity
-          const totalTransactions = summary[parityName];
+          const totalTransactions = summary[parityName][strategy];
           // Display the total number of transactions
           return totalTransactions;
-          // You can display this information in your frontend UI as needed
       } else {
           // If the parity is not found in the summaryData, display a message
           return 0;
@@ -209,7 +208,7 @@ export default function TradingOverview({ parities }) {
                         onClick={() => handleLogs(parity, strategy)}
                         style={{ margin: '5px' }}
                       >
-                        {getStrategyName(strategy)}
+                        {getStrategyName(strategy)} - {'('+handleSummary(parity, strategy) +')'}
                       </Button>
                     )}
                   </Box>
@@ -219,7 +218,7 @@ export default function TradingOverview({ parities }) {
                   onClick={() => handleCardClick(parity)}
                   style={{ margin: '5px' }}
                 >
-                  All Logs - {'('+handleSummary(parity) +')'}
+                  All Logs - {'('+handleSummary(parity, 'total') +')'}
                 </Button>
               </Typography>
             </CardContent>
@@ -234,7 +233,7 @@ export default function TradingOverview({ parities }) {
       >
         <Box sx={style}>
           <Typography align="center" style={{ paddingBottom: '20px' }}>
-            {selectedParity?.symbol} - {selectedParity?.interval} - {selectedStrategy}
+            {selectedParity?.symbol} - {selectedParity?.interval} - {getStrategyName(selectedStrategy)}
           </Typography>
           {logs && !is400 && (
             <TableContainer>

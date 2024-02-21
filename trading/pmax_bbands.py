@@ -62,6 +62,7 @@ async def pmax_bbands(parity, state, file_name, logger, zone, lowerband, pmax, c
             amount = state["pmax_bbands_bought_amount"]
             await logger.save({"zone":"sell","bbands": lowerband, "pmax": pmax, "price": close, "amount": amount, "quota": quota,  "strategy": "pmax_bbands"})
             await telegram_bot_sendtext(f"* {parity['symbol']}-{parity['interval']} - PMAX-BBANDS - SELL ORDER COMPLETED* Sell Price = {close}, Amount = {amount}", True)
+            orders.complete_order(state["pmax_bbands_sell_id"])
 
             state = update_state_file_and_state(
                 file_name, 'pmax_bbands_bought', state, False)
@@ -76,7 +77,6 @@ async def pmax_bbands(parity, state, file_name, logger, zone, lowerband, pmax, c
             state = update_state_file_and_state(
                 file_name, 'pmax_bbands_sell_id', state, "")
 
-            orders.complete_order(state["pmax_bbands_sell_id"])
 
 
     return state

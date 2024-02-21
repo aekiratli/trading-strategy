@@ -45,7 +45,37 @@ class Logger:
                 with open(self.summary_path, 'r') as file:
                     summary_data = json.load(file)
 
-            summary_data[self.parity] = summary_data.get(self.parity, 0) + 1
+            # Update summary data for the current parity
+            if self.parity not in summary_data:
+                summary_data[self.parity] = {"total": 0}
+
+            summary_data[self.parity]["total"] += 1
+
+            # Update strategy-specific counts if provided
+            if 'strategy' in data:
+                strategy_name = data['strategy']
+                if strategy_name not in summary_data[self.parity]:
+                    summary_data[self.parity][strategy_name] = 0
+                summary_data[self.parity][strategy_name] += 1
 
             with open(self.summary_path, 'w') as file:
                 json.dump(summary_data, file, indent=2)
+
+
+# test it out
+if __name__ == "__main__":
+    logger = Logger("BTCUSDT-1m")
+    asyncio.run(logger.save({"zone": "buy", "price": 1, "amount": 1, "quota": 1, "strategy": "rsi_trading"}))
+    asyncio.run(logger.save({"zone": "sell", "price": 1, "amount": 1, "quota": 1, "strategy": "rsi_trading"}))
+    asyncio.run(logger.save({"zone": "buy", "price": 1, "amount": 1, "quota": 1, "strategy": "rsi_trading_alt"}))
+    asyncio.run(logger.save({"zone": "sell", "price": 1, "amount": 1, "quota": 1, "strategy": "rsi_trading_alt"}))
+    asyncio.run(logger.save({"zone": "buy", "price": 1, "amount": 1, "quota": 1, "strategy": "rsi_trading"}))
+    asyncio.run(logger.save({"zone": "sell", "price": 1, "amount": 1, "quota": 1, "strategy": "rsi_trading"}))
+    asyncio.run(logger.save({"zone": "buy", "price": 1, "amount": 1, "quota": 1, "strategy": "rsi_trading_alt"}))
+    logger = Logger("BTCUSDT-15m")
+    asyncio.run(logger.save({"zone": "sell", "price": 1, "amount": 1, "quota": 1, "strategy": "rsi_trading_alt"}))
+    asyncio.run(logger.save({"zone": "buy", "price": 1, "amount": 1, "quota": 1, "strategy": "rsi_trading"}))
+    asyncio.run(logger.save({"zone": "sell", "price": 1, "amount": 1, "quota": 1, "strategy": "rsi_trading"}))
+    asyncio.run(logger.save({"zone": "buy", "price": 1, "amount": 1, "quota": 1, "strategy": "rsi_trading_alt"}))
+    asyncio.run(logger.save({"zone": "sell", "price": 1, "amount": 1, "quota": 1, "strategy": "rsi_trading_alt"}))
+    asyncio.run(logger.save({"zone": "buy", "price": 1, "amount": 1, "quota": 1, "strategy": "rsi_trading"}))

@@ -35,13 +35,14 @@ async def rsi_trading(parity, state, file_name, logger, rsi_value, close, orders
                 f"selling for rsi_trading -> rsi_value -> {rsi_value}, symbol -> {parity['symbol']}, interval -> {parity['interval']}, close -> {close}")
             quota = parity['rsi_trading_quota']
             amount = state["rsi_trading_bought_amount"]
+            sell_id = state["rsi_trading_alt_sell_id"]
+            await orders.complete_order(sell_id)
             await logger.save({"zone": "sell", "price": close, "amount": amount, "quota": quota, "strategy": "rsi_trading"})
             await telegram_bot_sendtext(f" *{parity['symbol']}-{parity['interval']} - RSI - LIMIT SELL ORDER COMPLETED* Price = {close}, Amount = {amount}", True)
             state = update_state_file_and_state(file_name, 'rsi_trading_bought', state, False)
             state = update_state_file_and_state(file_name, 'rsi_trading_buy_price', state, 0)
             state = update_state_file_and_state(file_name, 'rsi_trading_bought_amount', state, 0)
             state = update_state_file_and_state(file_name, 'rsi_trading_sell_id', state, "")
-            await orders.complete_order(state["rsi_trading_sell_id"])
 
     return state
 
@@ -73,13 +74,14 @@ async def rsi_trading_alt(parity, state, file_name, logger, rsi_value, close, or
                 f"selling for rsi_trading_alt -> rsi_value -> {rsi_value}, symbol -> {parity['symbol']}, interval -> {parity['interval']}, close -> {close}")
             quota = parity['rsi_trading_alt_quota']
             amount = state["rsi_trading_alt_bought_amount"]
+            sell_id = state["rsi_trading_alt_sell_id"]
+            await orders.complete_order(sell_id)
             await logger.save({"zone": "sell", "price": close, "amount": amount, "quota": quota, "strategy": "rsi_trading_alt"})
             await telegram_bot_sendtext(f" *{parity['symbol']}-{parity['interval']} - RSI ALT - LIMIT SELL ORDER COMPLETED* Price = {close}, Amount = {amount}", True)
             state = update_state_file_and_state(file_name, 'rsi_trading_alt_bought', state, False)
             state = update_state_file_and_state(file_name, 'rsi_trading_alt_buy_price', state, 0)
             state = update_state_file_and_state(file_name, 'rsi_trading_alt_bought_amount', state, 0)
             state = update_state_file_and_state(file_name, 'rsi_trading_alt_sell_id', state, "")
-            await orders.complete_order(state["rsi_trading_alt_sell_id"])
 
     return state
 

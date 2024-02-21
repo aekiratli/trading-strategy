@@ -8,6 +8,7 @@ from flask_jwt_extended import JWTManager, jwt_required, create_access_token
 from datetime import timedelta
 from flask_cors import CORS
 import numpy as np
+from binance.client import Client
 
 load_dotenv()  # Load environment variables from .env
 
@@ -30,6 +31,7 @@ app.config['CHAT_ID'] = os.getenv('CHAT_ID')
 
 # NON GLOBAL
 pythonanywhere_host = "eu.pythonanywhere.com"
+client = Client(os.getenv('BINANCE_API_KEY'), os.getenv('BINANCE_API_SECRET'))
 
 api_base = "https://{pythonanywhere_host}/api/v0/user/{username}/".format(
     pythonanywhere_host=pythonanywhere_host,
@@ -264,6 +266,59 @@ def cancel_order(id):
         
     return jsonify({"msg": "Order not found"}), 404
         
+@app.route('/assets')
+@jwt_required()
+def get_info():
+    try:
+        info = client.get_user_asset()        
+        return jsonify(info), 200
+    except Exception as e:
+        return jsonify({"msg": str(e)}), 500
 
+@app.route('/trades/<string:symbol>')
+@jwt_required()
+def trades(symbol):
+    try:
+        info = client.get_all_orders(symbol=symbol)       
+        return jsonify(info), 200
+    except Exception as e:
+        return jsonify({"msg": str(e)}), 500
+    
+@app.route('/binance_open_orders')
+@jwt_required()
+def binance_open_orders():
+    return jsonify(
+        [
+  {
+    "symbol": "LTCBTC",
+    "orderId": 1,
+    "orderListId": -1, 
+    "clientOrderId": "myOrder1",
+    "price": "0.1",
+    "origQty": "1.0",
+    "executedQty": "0.0",
+    "cummulativeQuoteQty": "0.0",
+    "status": "NEW",
+    "timeInForce": "GTC",
+    "type": "LIMIT",
+    "side": "BUY",
+    "stopPrice": "0.0",
+    "icebergQty": "0.0",
+    "time": 1499827319559,
+    "updateTime": 1499827319559,
+    "isWorking": True,
+    "workingTime": 1499827319559,
+    "origQuoteOrderQty": "0.000000",
+    "selfTradePreventionMode": "NONE"
+  }
+]
+    ), 200
+    try:
+        orders = client.get_open_orders()
+        return jsonify(orders), 200
+    except Exception as e:
+        return jsonify({"msg": str(e)}), 500
+    
+    
 if __name__ == '__main__':
     app.run(debug=True, port=5005)
