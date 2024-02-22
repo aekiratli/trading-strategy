@@ -9,6 +9,7 @@ from datetime import timedelta
 from flask_cors import CORS
 import numpy as np
 from binance.client import Client
+from datetime import datetime
 
 load_dotenv()  # Load environment variables from .env
 
@@ -214,6 +215,25 @@ def cancel_order(id):
     order_found = False
     for order in existing_data:
         if order['id'] == id:
+            current_year = datetime.now().strftime('%Y')
+            current_month = datetime.now().strftime('%m')
+            current_date = datetime.now().strftime('%d')
+
+            # create year, month, date and id directories if they don't exist
+            year_path = f'{app.config["ORDER_PATH"]}/{current_year}'
+            month_path = f'{year_path}/{current_month}'
+            date_path = f'{month_path}/{current_date}'
+            id_path = f'{date_path}/{id}'
+
+            for dir_path in [year_path, month_path, date_path, id_path]:
+                if not os.path.exists(dir_path):
+                    os.mkdir(dir_path)
+
+            # create the log file
+            log_file = f'{id_path}/cancelled.json'
+            with open(log_file, 'w') as file:
+                json.dump({"cancelled": True}, file, indent=2)
+
             order_found = True
             with open(cancelled_path, 'r') as file:
                 cancelled_data = json.load(file)

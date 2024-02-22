@@ -59,7 +59,6 @@ export default function Account() {
       const data = await response.json();
       if (data) {
         setAssets(data);
-        console.log(data);
       }
     }
     const fetchOrders = async () => {
@@ -76,7 +75,6 @@ export default function Account() {
       const data = await response.json();
       if (data) {
         setOrders(data);
-        console.log(data);
       }
     }
     fetchOrders();

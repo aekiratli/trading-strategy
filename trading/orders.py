@@ -49,6 +49,29 @@ class Orders:
             'id': id
         }
 
+        # create a log file with the following folder structure
+        # <year>/<month>/<date>/<id>/created.json
+
+        # get current year, month and date
+        current_year = datetime.now().strftime('%Y')
+        current_month = datetime.now().strftime('%m')
+        current_date = datetime.now().strftime('%d')
+
+        # create year, month, date and id directories if they don't exist
+        year_path = f'{self.main_path}/{current_year}'
+        month_path = f'{year_path}/{current_month}'
+        date_path = f'{month_path}/{current_date}'
+        id_path = f'{date_path}/{id}'
+
+        for dir_path in [year_path, month_path, date_path, id_path]:
+            if not os.path.exists(dir_path):
+                os.mkdir(dir_path)
+
+        # create the log file
+        log_file = f'{id_path}/created.json'
+        with open(log_file, 'w') as file:
+            json.dump({"created": True}, file, indent=2)
+
         async with asyncio.Lock():
 
             with open(file_name, 'r') as file:
@@ -63,6 +86,25 @@ class Orders:
         file_name = f'{self.open_path}'
         completed_path = f'{self.completed_path}'
 
+        current_year = datetime.now().strftime('%Y')
+        current_month = datetime.now().strftime('%m')
+        current_date = datetime.now().strftime('%d')
+
+        # create year, month, date and id directories if they don't exist
+        year_path = f'{self.main_path}/{current_year}'
+        month_path = f'{year_path}/{current_month}'
+        date_path = f'{month_path}/{current_date}'
+        id_path = f'{date_path}/{id}'
+
+        for dir_path in [year_path, month_path, date_path, id_path]:
+            if not os.path.exists(dir_path):
+                os.mkdir(dir_path)
+
+        # create the log file
+        log_file = f'{id_path}/completed.json'
+        with open(log_file, 'w') as file:
+            json.dump({"completed": True}, file, indent=2)
+            
         async with asyncio.Lock():
 
             with open(file_name, 'r') as file:
@@ -82,6 +124,25 @@ class Orders:
     async def cancel_order(self, id):
         file_name = f'{self.open_path}'
         cancelled_path = f'{self.cancelled_path}'
+
+        current_year = datetime.now().strftime('%Y')
+        current_month = datetime.now().strftime('%m')
+        current_date = datetime.now().strftime('%d')
+
+        # create year, month, date and id directories if they don't exist
+        year_path = f'{self.main_path}/{current_year}'
+        month_path = f'{year_path}/{current_month}'
+        date_path = f'{month_path}/{current_date}'
+        id_path = f'{date_path}/{id}'
+
+        for dir_path in [year_path, month_path, date_path, id_path]:
+            if not os.path.exists(dir_path):
+                os.mkdir(dir_path)
+
+        # create the log file
+        log_file = f'{id_path}/cancelled.json'
+        with open(log_file, 'w') as file:
+            json.dump({"cancelled": True}, file, indent=2)
 
         async with asyncio.Lock():
 

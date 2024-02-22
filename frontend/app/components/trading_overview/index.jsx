@@ -104,7 +104,6 @@ export default function TradingOverview({ parities }) {
   }, []);
 
   const handleCardClick = async (parity) => {
-    console.log(parity);
     setIsCardClicked(true);
     setIsLogsModalOpen(true);
     setSelectedParity(parity);
