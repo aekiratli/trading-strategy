@@ -66,7 +66,7 @@ def update_state_file(file_name, state, state_value):
         print(f'Error: {file_name}_state.json is not a valid JSON file.')
 
         
-def initialize_state_files(file_names):
+def initialize_state_files(file_names) -> list:
     # create state directory if it doesn't exist
     data = {"rsi": "n",
             "pmax": "n", 
@@ -104,6 +104,17 @@ def initialize_state_files(file_names):
         if not os.path.exists(state_file_path):
             with open(state_file_path, 'w') as state_file:
                 json.dump(data, state_file, indent=2)
+    # create empty active_trades file if it doesn't exist
+    active_trades_file_path = f'{STATE_PATH}/active_trades.json'
+    if not os.path.exists(active_trades_file_path):
+        with open(active_trades_file_path, 'w') as active_trades_file:
+            json.dump([], active_trades_file, indent=2)
+            return []
+    else:
+        with open(active_trades_file_path, 'r') as active_trades_file:
+            active_trades = json.load(active_trades_file)
+            return active_trades
+
 
 def initialize_update_files(file_names):
     if not os.path.exists(UPDATE_PATH):

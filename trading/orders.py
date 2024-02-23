@@ -4,15 +4,17 @@ from datetime import datetime
 from dotenv import load_dotenv
 import asyncio
 import uuid
-from utils import update_update_file, telegram_bot_sendtext, initialize_parities, initialize_state_files, read_state_file, update_state_file_and_state
+from utils import *
+from binance.client import AsyncClient
 
 load_dotenv()
 
 ORDER_PATH = os.getenv("ORDER_PATH")
 
 class Orders:
-    def __init__(self, parity: str):
+    def __init__(self, parity: str, client: AsyncClient):
         self.parity = parity
+        self.client = client
         self.main_path = f'{ORDER_PATH}'
         self.completed_path = f'{ORDER_PATH}/completed.json'
         self.cancelled_path = f'{ORDER_PATH}/cancelled.json'
@@ -34,6 +36,21 @@ class Orders:
                 json.dump([], file, indent=2)
 
     async def create_order(self, amount, price, action, strategy, market_type, id):
+        # use 4 decimal places for the price and amount
+        price = round(price, 4)
+        amount = round(amount, 4)
+        order_data = {
+            'symbol': self.parity["symbol"],
+            'side': AsyncClient.SIDE_BUY if action == 'buy' else AsyncClient.SIDE_SELL,
+            'type': AsyncClient.ORDER_TYPE_LIMIT if market_type == 'limit' else AsyncClient.ORDER_TYPE_MARKET,
+            'quantity': amount,
+        }
+
+        if market_type == 'limit':
+            order_data['timeInForce'] = AsyncClient.TIME_IN_FORCE_GTC
+            order_data['price'] = price
+
+        order = await self.client.create_order(**order_data)
         ts = int(datetime.now().timestamp())
         file_name = f'{self.open_path}'
         data = {

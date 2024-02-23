@@ -22,7 +22,7 @@ TELEGRAM_KEY = os.getenv("TELEGRAM_KEY")
 CHAT_ID = os.getenv("CHAT_ID")
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-async def main(df, parity, task_id, file_name, state, rsi_states):
+async def main(df, parity, task_id, file_name, state, rsi_states, active_trades):
 
     is_first_run = True
     pmax_candle_counter = state['pmax_candle_counter']
@@ -57,8 +57,8 @@ async def main(df, parity, task_id, file_name, state, rsi_states):
     SYMBOL = parity['symbol']
     INTERVAL = parity['interval']
     logger = Logger(f"{parity['symbol']}{parity['interval']}")
-    orders = Orders(parity)
     client = await AsyncClient.create()
+    orders = Orders(parity, client)
     bm = BinanceSocketManager(client)
     ts = bm.kline_socket(SYMBOL, interval=INTERVAL)
 
@@ -215,18 +215,32 @@ async def main(df, parity, task_id, file_name, state, rsi_states):
             rsi_value = rsi.iloc[-1]
             lowerband = lowerband.iloc[-1]
             zone = pmax_df.iloc[-1,-1]
-            state = await pmax_bbands(parity, state, file_name, logger, zone, lowerband, pmax, close,orders)
-            state = await rsi_bbands(parity, state, file_name, logger, lowerband, rsi_value, close, orders)
-            state = await rsi_bbands_alt(parity, state, file_name, logger, lowerband, rsi_value, close, orders)
-            state = await rsi_trading(parity, state, file_name, logger, rsi_value, close,  orders)
-            state = await rsi_trading_alt(parity, state, file_name, logger, rsi_value, close, orders)
+            if len(active_trades) <= 3:
+                state = await pmax_bbands(parity, state, file_name, logger, zone, lowerband, pmax, close,orders)
+                state = await rsi_bbands(parity, state, file_name, logger, lowerband, rsi_value, close, orders)
+                state = await rsi_bbands_alt(parity, state, file_name, logger, lowerband, rsi_value, close, orders)
+                state = await rsi_trading(parity, state, file_name, logger, rsi_value, close,  orders)
+                state = await rsi_trading_alt(parity, state, file_name, logger, rsi_value, close, orders)
+            else:
+                for trade in active_trades:
+                    if trade == parity['symbol'] + parity['interval'] + "_pmax_bbands":
+                        state = await pmax_bbands(parity, state, file_name, logger, zone, lowerband, pmax, close, orders)
+                    if trade == parity['symbol'] + parity['interval'] + "_rsi_bbands":
+                        state = await rsi_bbands(parity, state, file_name, logger, lowerband, rsi_value, close, orders)
+                    if trade == parity['symbol'] + parity['interval'] + "_rsi_bbands_alt":
+                        state = await rsi_bbands_alt(parity, state, file_name, logger, lowerband, rsi_value, close, orders)
+                    if trade == parity['symbol'] + parity['interval'] + "_rsi_trading":
+                        state = await rsi_trading(parity, state, file_name, logger, rsi_value, close, orders)
+                    if trade == parity['symbol'] + parity['interval'] + "_rsi_trading_alt":
+                        state = await rsi_trading_alt(parity, state, file_name, logger, rsi_value, close, orders)
+
 
 
 async def run_parities():
 
     # create tasks for each parity
     parities, file_names = initialize_parities()
-    initialize_state_files(file_names)
+    active_trades = initialize_state_files(file_names)
     initialize_update_files(file_names)
     tasks = []
     task_id = 0
@@ -235,7 +249,7 @@ async def run_parities():
             rsi_states = calculate_rsi_states(parity)
             state = read_state_file(file_names[task_id])
             df = get_candles(parity['symbol'], parity['interval'], parity['start'])
-            tasks.append(main(df, parity, task_id, file_names[task_id], state,rsi_states))        
+            tasks.append(main(df, parity, task_id, file_names[task_id], state,rsi_states, active_trades))        
         task_id += 1
     send_text = 'https://api.telegram.org/bot' + TELEGRAM_KEY + '/sendMessage?chat_id=' + CHAT_ID + '&parse_mode=Markdown&text=' + "Bot is running"
     async with aiohttp.ClientSession() as session:

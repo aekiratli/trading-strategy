@@ -10,6 +10,8 @@ from flask_cors import CORS
 import numpy as np
 from binance.client import Client
 from datetime import datetime
+import traceback
+import uuid
 
 load_dotenv()  # Load environment variables from .env
 
@@ -215,6 +217,10 @@ def cancel_order(id):
     order_found = False
     for order in existing_data:
         if order['id'] == id:
+            client.cancel_order(
+                symbol=order['symbol'],
+                orderId=order['orderId'],
+            )
             current_year = datetime.now().strftime('%Y')
             current_month = datetime.now().strftime('%m')
             current_date = datetime.now().strftime('%d')
@@ -312,7 +318,89 @@ def binance_open_orders():
         return jsonify(orders), 200
     except Exception as e:
         return jsonify({"msg": str(e)}), 500
+
+@app.route('/trades/<string:symbol>/<string:order_id>')
+@jwt_required()
+def order_details(symbol, order_id):
+    try:
+        orders = client.get_my_trades(symbol=symbol, orderId=order_id)
+        return jsonify(orders), 200
+    except Exception as e:
+        return jsonify({"msg": str(e)}), 500
     
+@app.route('/price/<string:symbol>')
+@jwt_required()
+def price(symbol):
+    try:
+        price = client.get_symbol_ticker(symbol=symbol)
+        return jsonify(price), 200
+    except Exception as e:
+        return jsonify({"msg": str(e)}), 500
+
+@app.route('/create_order', methods=['POST'])
+@jwt_required()
+def create_order():
+    if not request.is_json:
+        return jsonify({"msg": "Missing JSON in request"}), 400
+    data = request.get_json()
+    try:
+        order_data = {
+            'symbol': data['symbol'],
+            'side': data['side'],
+            'type': data['type'],
+        }
+
+        if data['type'].upper() == 'LIMIT':
+            order_data['timeInForce'] = "GTC"
+            order_data['price'] = data['price']
+
+        order_data['quantity'] = data['amount']
+
+        order = client.create_order(**order_data)
+        orderId = order['orderId']
+        uuidv4 = str(uuid.uuid4())
+        data = {
+            "timestamp": order['transactTime'],
+            "id": uuidv4,
+            "symbol": data['symbol'],
+            "interval": "",
+            "action": data['side'],
+            "market_type": data['type'],
+            "amount": data['amount'],
+            "price": data['price'],
+            "orderId": orderId,
+            "strategy": ""
+        }
+        current_year = datetime.now().strftime('%Y')
+        current_month = datetime.now().strftime('%m')
+        current_date = datetime.now().strftime('%d')
+
+        # create year, month, date and id directories if they don't exist
+        year_path = f'{app.config["ORDER_PATH"]}/{current_year}'
+        month_path = f'{year_path}/{current_month}'
+        date_path = f'{month_path}/{current_date}'
+        id_path = f'{date_path}/{uuidv4}'
+
+        for dir_path in [year_path, month_path, date_path, id_path]:
+            if not os.path.exists(dir_path):
+                os.mkdir(dir_path)
+
+        # create the log file
+        log_file = f'{id_path}/open.json'
+        with open(log_file, 'w') as file:
+            json.dump(data, file, indent=2)
+
+        with open(f'{app.config["ORDER_PATH"]}/open.json', 'r') as file:
+            existing_data = json.load(file)
+        with open(f'{app.config["ORDER_PATH"]}/open.json', 'w') as file:
+            existing_data.append(data)
+            json.dump(existing_data, file, indent=2)
+
+        return jsonify(order), 200
+    except Exception as e:
+        print(traceback.format_exc())
+        return jsonify({"msg": str(e)}), 500    
+
     
 if __name__ == '__main__':
     app.run(debug=True, port=5005)

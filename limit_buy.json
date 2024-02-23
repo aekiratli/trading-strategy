@@ -1,0 +1,26 @@
+[
+   {
+      "symbol":"BNBUSDT",
+      "id":712114132,
+      "orderId":5047865079,
+      "orderListId":-1,
+      "price":"373.80000000",
+      "qty":"0.05000000",
+      "quoteQty":"18.69000000",
+      "commission":"0.00003750",
+      "commissionAsset":"BNB",
+      "time":1708690106181,
+      "isBuyer":true,
+      "isMaker":false,
+      "isBestMatch":true
+   }
+]
+
+// order = await client.create_order(
+// symbol='BNBUSDT',
+// side=AsyncClient.SIDE_BUY,
+// type=AsyncClient.ORDER_TYPE_LIMIT,
+// timeInForce=AsyncClient.TIME_IN_FORCE_GTC,
+// quantity=0.05,
+// price='373.8000',
+// )

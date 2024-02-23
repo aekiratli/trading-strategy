@@ -1,0 +1,35 @@
+{
+    "symbol":"BNBUSDT",
+    "orderId":5047825236,
+    "orderListId":-1,
+    "clientOrderId":"EfSNTiSInFKAg7YTXUbUGC",
+    "transactTime":1708688603750,
+    "price":"0.00000000",
+    "origQty":"0.05000000",
+    "executedQty":"0.05000000",
+    "cummulativeQuoteQty":"18.78500000",
+    "status":"FILLED",
+    "timeInForce":"GTC",
+    "type":"MARKET",
+    "side":"SELL",
+    "workingTime":1708688603750,
+    "fills":[
+       {
+          "price":"375.70000000",
+          "qty":"0.05000000",
+          "commission":"0.00003750",
+          "commissionAsset":"BNB",
+          "tradeId":712104388
+       }
+    ],
+    "selfTradePreventionMode":"EXPIRE_MAKER"
+ }
+
+//  order = await client.create_order(
+//  symbol='BNBUSDT',
+//  side=AsyncClient.SIDE_SELL,
+//  type=AsyncClient.ORDER_TYPE_MARKET,
+//  # timeInForce=AsyncClient.TIME_IN_FORCE_GTC,
+//  quantity=0.05,
+//  # price='52000.00',
+// )

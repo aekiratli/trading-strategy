@@ -2,6 +2,7 @@ import React from 'react';
 import Cookies from 'universal-cookie';
 import { Card, CardContent, Typography, Grid, Button, Dialog, DialogTitle, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TablePagination, Tab} from '@mui/material';
 import { timestampToReadableDate } from '@/utils/dates';
+import styled from 'styled-components';
 
 export default function Account() {
 
@@ -10,17 +11,39 @@ export default function Account() {
   const [orders, setOrders] = React.useState([]);
   const [assetOrders, setAssetOrders] = React.useState([]);
   const [assetModalOpen, setAssetModalOpen] = React.useState(false);
+  const [orderModalOpen, setOrderModalOpen] = React.useState(false);
   const [page, setPage] = React.useState(0);
   const [rowsPerPage, setRowsPerPage] = React.useState(5);
+  const [selectedOrder, setSelectedOrder] = React.useState([]);
+  const [selectedAsset, setSelectedAsset] = React.useState('');
 
   const handleChangePage = (event, newPage) => {
     setPage(newPage);
+  };
+
+  const handleRowClick = async (order) => {
+    const token = new Cookies().get('token');
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/trades/${selectedAsset+'USDT'}/${order.orderId}`,
+      {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`, // Use appropriate authentication scheme and token format
+          'Content-Type': 'application/json'
+          // If you're using a different type of authentication, adjust the header accordingly
+        },
+      });
+    const data = await response.json();
+    if (data) {
+      setSelectedOrder(data);
+    }
+    setOrderModalOpen(true);
   };
 
   const handleChangeRowsPerPage = (event) => {
     setRowsPerPage(parseInt(event.target.value, 10));
     setPage(0);
   };
+  
 
   const handleClickOpen = async (symbol) => {
     const token = new Cookies().get('token');
@@ -35,7 +58,10 @@ export default function Account() {
       });
     const data = await response.json();
     if (data) {
+      // reverse the array to show the latest trades first
+      data.reverse();
       setAssetOrders(data);
+      setSelectedAsset(symbol);
     }
     setAssetModalOpen(true);
   };
@@ -82,6 +108,14 @@ export default function Account() {
   }
     , []);
 
+    
+    const StyledTableRow = styled(TableRow)`
+    &:hover {
+      background-color: #f2f2f2; // change background color on hover
+      cursor: pointer; // change cursor to pointer on hover
+    }
+  `;
+
   return (
     <div>
       <h1>Assets</h1>
@@ -115,17 +149,17 @@ export default function Account() {
       </Grid>
       <Dialog open={assetModalOpen} onClose={handleClose} fullWidth maxWidth="md">
         <DialogTitle>
-          Orders
+          Orders - {selectedAsset + 'USDT'}
         </DialogTitle>
         <TableContainer>
           <Table>
             <TableHead>
               <TableRow>
                 {/* Add table headers here */}
-                <TableCell>Client Order ID</TableCell>
+                <TableCell>Order ID</TableCell>
                 <TableCell>Time</TableCell>
-                <TableCell>Executed Qty</TableCell>
-                <TableCell>Cummulative Quote Qty</TableCell>
+                <TableCell>Amount</TableCell>
+                <TableCell>USDT Amount</TableCell>
                 <TableCell>Side</TableCell>
                 <TableCell>Status</TableCell>
                 <TableCell>Type</TableCell>
@@ -134,9 +168,9 @@ export default function Account() {
             </TableHead>
             <TableBody>
               {assetOrders.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((item, index) => (
-                <TableRow key={index}>
+                <StyledTableRow onClick={() => {handleRowClick(item)}} key={index}>
                   {/* Add table cells here */}
-                  <TableCell>{item.clientOrderId}</TableCell>
+                  <TableCell>{item.orderId}</TableCell>
                   <TableCell>{timestampToReadableDate(item.time / 1000)}</TableCell>
                   <TableCell>{item.executedQty}</TableCell>
                   <TableCell>{item.cummulativeQuoteQty}</TableCell>
@@ -144,7 +178,7 @@ export default function Account() {
                   <TableCell>{item.status}</TableCell>
                   <TableCell>{item.type}</TableCell>
                   {/* Add more cells as needed */}
-                </TableRow>
+                </StyledTableRow>
               ))}
             </TableBody>
           </Table>
@@ -189,6 +223,37 @@ export default function Account() {
           </TableBody>
         </Table>
       </TableContainer>
+      <Dialog open={orderModalOpen} onClose={() => setOrderModalOpen(false)} fullWidth maxWidth="md">
+        <DialogTitle>
+          Order Details
+        </DialogTitle>
+        <TableContainer>
+          <Table>
+            <TableHead>
+              <TableRow>
+                <TableCell>Symbol</TableCell>
+                <TableCell>Price</TableCell>
+                <TableCell>Quantity</TableCell>
+                <TableCell>Commision</TableCell>
+                <TableCell>Commision Asset</TableCell>
+                <TableCell>USDT Value</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {selectedOrder.map((key) => (
+                <TableRow key={key.orderId}>
+                  <TableCell>{key.symbol}</TableCell>
+                  <TableCell>{key.price}</TableCell>
+                  <TableCell>{key.qty}</TableCell>
+                  <TableCell>{key.commission}</TableCell>
+                  <TableCell>{key.commissionAsset}</TableCell>
+                  <TableCell>{key.quoteQty}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      </Dialog>
     </div>
   );
 }
