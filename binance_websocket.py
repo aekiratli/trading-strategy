@@ -216,23 +216,37 @@ async def main(df, parity, task_id, file_name, state, rsi_states, active_trades)
             lowerband = lowerband.iloc[-1]
             zone = pmax_df.iloc[-1,-1]
             if len(active_trades) <= 3:
-                state = await pmax_bbands(parity, state, file_name, logger, zone, lowerband, pmax, close,orders)
-                state = await rsi_bbands(parity, state, file_name, logger, lowerband, rsi_value, close, orders)
-                state = await rsi_bbands_alt(parity, state, file_name, logger, lowerband, rsi_value, close, orders)
-                state = await rsi_trading(parity, state, file_name, logger, rsi_value, close,  orders)
-                state = await rsi_trading_alt(parity, state, file_name, logger, rsi_value, close, orders)
-            else:
-                for trade in active_trades:
-                    if trade == parity['symbol'] + parity['interval'] + "_pmax_bbands":
-                        state = await pmax_bbands(parity, state, file_name, logger, zone, lowerband, pmax, close, orders)
-                    if trade == parity['symbol'] + parity['interval'] + "_rsi_bbands":
-                        state = await rsi_bbands(parity, state, file_name, logger, lowerband, rsi_value, close, orders)
-                    if trade == parity['symbol'] + parity['interval'] + "_rsi_bbands_alt":
-                        state = await rsi_bbands_alt(parity, state, file_name, logger, lowerband, rsi_value, close, orders)
-                    if trade == parity['symbol'] + parity['interval'] + "_rsi_trading":
-                        state = await rsi_trading(parity, state, file_name, logger, rsi_value, close, orders)
-                    if trade == parity['symbol'] + parity['interval'] + "_rsi_trading_alt":
-                        state = await rsi_trading_alt(parity, state, file_name, logger, rsi_value, close, orders)
+                if not active_trades:
+                    tasks = [
+                        pmax_bbands(parity, state, file_name, logger, zone, lowerband, pmax, close, orders),
+                        rsi_bbands(parity, state, file_name, logger, lowerband, rsi_value, close, orders),
+                        rsi_bbands_alt(parity, state, file_name, logger, lowerband, rsi_value, close, orders),
+                        rsi_trading(parity, state, file_name, logger, rsi_value, close, orders),
+                        rsi_trading_alt(parity, state, file_name, logger, rsi_value, close, orders)
+                    ]
+                    results = await asyncio.gather(*tasks)
+                    # Update state based on results
+                    for result in results:
+                        if result is not None:
+                            state.update(result)
+                else:
+                    tasks = []
+                    for trade in active_trades:
+                        if trade == parity['symbol'] + parity['interval'] + "_pmax_bbands":
+                            tasks.append(pmax_bbands(parity, state, file_name, logger, zone, lowerband, pmax, close, orders))
+                        if trade == parity['symbol'] + parity['interval'] + "_rsi_bbands":
+                            tasks.append(rsi_bbands(parity, state, file_name, logger, lowerband, rsi_value, close, orders))
+                        if trade == parity['symbol'] + parity['interval'] + "_rsi_bbands_alt":
+                            tasks.append(rsi_bbands_alt(parity, state, file_name, logger, lowerband, rsi_value, close, orders))
+                        if trade == parity['symbol'] + parity['interval'] + "_rsi_trading":
+                            tasks.append(rsi_trading(parity, state, file_name, logger, rsi_value, close, orders))
+                        if trade == parity['symbol'] + parity['interval'] + "_rsi_trading_alt":
+                            tasks.append(rsi_trading_alt(parity, state, file_name, logger, rsi_value, close, orders))
+                    results = await asyncio.gather(*tasks)
+                    # Update state based on results
+                    for result in results:
+                        if result is not None:
+                            state.update(result)
 
 
 

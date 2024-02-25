@@ -93,7 +93,9 @@ def initialize_state_files(file_names) -> list:
             "rsi_trading_alt_buy_price": 0,
             "rsi_trading_bought_amount": 0,
             "rsi_trading_alt_bought_amount": 0,
-            "pmax_candle_counter": 0
+            "pmax_candle_counter": 0,
+            "pmax_bbands_buy_orderId": '',
+            "rsi_trading_sell_id": '',
             }
 
     if not os.path.exists(STATE_PATH):

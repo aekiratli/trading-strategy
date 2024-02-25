@@ -10,6 +10,7 @@ from binance.client import AsyncClient
 load_dotenv()
 
 ORDER_PATH = os.getenv("ORDER_PATH")
+STATE_PATH = os.getenv("STATE_PATH")
 
 class Orders:
     def __init__(self, parity: str, client: AsyncClient):
@@ -19,6 +20,7 @@ class Orders:
         self.completed_path = f'{ORDER_PATH}/completed.json'
         self.cancelled_path = f'{ORDER_PATH}/cancelled.json'
         self.open_path = f'{ORDER_PATH}/open.json'
+        self.state_path = f'{STATE_PATH}'
 
         if not os.path.exists(ORDER_PATH):
             os.mkdir(ORDER_PATH)
@@ -50,7 +52,19 @@ class Orders:
             order_data['timeInForce'] = AsyncClient.TIME_IN_FORCE_GTC
             order_data['price'] = price
 
-        order = await self.client.create_order(**order_data)
+        # add to active_trades
+        async with asyncio.Lock():
+            with open(f'{self.state_path}/active_trades.json', 'r') as file:
+                existing_data = json.load(file)
+                if len(existing_data) == 3:
+                    return
+                else:
+                    order = await self.client.create_order(**order_data)
+                    existing_data.append(f'{self.parity["symbol"]}{self.parity["interval"]}_{strategy}')
+                    with open(f'{self.state_path}/active_trades.json', 'w') as file:
+                        json.dump(existing_data, file, indent=2)
+
+
         ts = int(datetime.now().timestamp())
         file_name = f'{self.open_path}'
         data = {
@@ -87,7 +101,7 @@ class Orders:
         # create the log file
         log_file = f'{id_path}/created.json'
         with open(log_file, 'w') as file:
-            json.dump({"created": True}, file, indent=2)
+            json.dump(order, file, indent=2)
 
         async with asyncio.Lock():
 
@@ -98,6 +112,8 @@ class Orders:
 
             with open(file_name, 'w') as file:
                 json.dump(existing_data, file, indent=2)
+
+        return order['orderId']
 
     async def complete_order(self, id):
         file_name = f'{self.open_path}'
@@ -129,6 +145,14 @@ class Orders:
 
             for order in existing_data:
                 if order['id'] == id:
+                    # remove from active_trades
+                    async with asyncio.Lock():
+                        with open(f'{self.state_path}/active_trades.json', 'r') as file:
+                            existing_data = json.load(file)
+                            existing_data.remove(f'{self.parity["symbol"]}{self.parity["interval"]}_{order["strategy"]}')
+                            with open(f'{self.state_path}/active_trades.json', 'w') as file:
+                                json.dump(existing_data, file, indent=2)
+
                     with open(completed_path, 'r') as file:
                         completed_data = json.load(file)
                     with open(completed_path, 'w') as file:
