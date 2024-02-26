@@ -78,7 +78,7 @@ class Orders:
                         with open(f'{self.state_path}/active_trades.json', 'w') as file:
                             json.dump(existing_data, file, indent=2)
                     except Exception as e:
-                        await telegram_bot_sendtext(f"*{self.parity["symbol"]}-{self.parity["interval"]} - Order creation failed.* due to the : {e}", True)
+                        await telegram_bot_sendtext(f"*{self.parity['symbol']}-{self.parity['interval']} - Order creation failed.* due to the : {e}", True)
                         raise e
 
 
@@ -183,79 +183,79 @@ class Orders:
         #await telegram_bot_sendtext(f"*{self.parity["symbol"]}-{self.parity["interval"]} - Order is fulfilled.", True)
 
 
-    async def cancel_order(self, id):
-        file_name = f'{self.open_path}'
-        cancelled_path = f'{self.cancelled_path}'
+    # async def cancel_order(self, id):
+    #     file_name = f'{self.open_path}'
+    #     cancelled_path = f'{self.cancelled_path}'
 
-        current_year = datetime.now().strftime('%Y')
-        current_month = datetime.now().strftime('%m')
-        current_date = datetime.now().strftime('%d')
+    #     current_year = datetime.now().strftime('%Y')
+    #     current_month = datetime.now().strftime('%m')
+    #     current_date = datetime.now().strftime('%d')
 
-        # create year, month, date and id directories if they don't exist
-        year_path = f'{self.main_path}/{current_year}'
-        month_path = f'{year_path}/{current_month}'
-        date_path = f'{month_path}/{current_date}'
-        id_path = f'{date_path}/{id}'
+    #     # create year, month, date and id directories if they don't exist
+    #     year_path = f'{self.main_path}/{current_year}'
+    #     month_path = f'{year_path}/{current_month}'
+    #     date_path = f'{month_path}/{current_date}'
+    #     id_path = f'{date_path}/{id}'
 
-        for dir_path in [year_path, month_path, date_path, id_path]:
-            if not os.path.exists(dir_path):
-                os.mkdir(dir_path)
+    #     for dir_path in [year_path, month_path, date_path, id_path]:
+    #         if not os.path.exists(dir_path):
+    #             os.mkdir(dir_path)
 
-        # create the log file
-        log_file = f'{id_path}/cancelled.json'
-        with open(log_file, 'w') as file:
-            json.dump({"cancelled": True}, file, indent=2)
+    #     # create the log file
+    #     log_file = f'{id_path}/cancelled.json'
+    #     with open(log_file, 'w') as file:
+    #         json.dump({"cancelled": True}, file, indent=2)
 
-        async with asyncio.Lock():
+    #     async with asyncio.Lock():
 
-            with open(file_name, 'r') as file:
-                existing_data = json.load(file)
+    #         with open(file_name, 'r') as file:
+    #             existing_data = json.load(file)
 
-            for order in existing_data:
-                if order['id'] == id:
-                    with open(cancelled_path, 'r') as file:
-                        cancelled_data = json.load(file)
-                    with open(cancelled_path, 'w') as file:
-                        cancelled_data.append(order)
-                        json.dump(cancelled_data, file, indent=2)
-                    update_update_file(self.parity["symbol"], True)
-                    if order["strategy"] == "pmax_bbands":
-                        await telegram_bot_sendtext(f"* {order['symbol']}-{order['interval']} - PMAX-BBANDS - ORDER CANCELLED* Order ID = {id}", True)
-                        state = update_state_file_and_state(file_name, 'pmax_bbands_buy_id', state, "")
-                        state = update_state_file_and_state(file_name, 'pmax_bbands_bought', state, False)
-                        state = update_state_file_and_state(file_name, 'pmax_bbands_buy_price', state, 0)
-                        state = update_state_file_and_state(file_name, 'pmax_bbands_sell_price', state, 0)
-                        state = update_state_file_and_state(file_name, 'pmax_bbands_bought_amount', state, 0)
-                        state = update_state_file_and_state(file_name, 'pmax_bbands_has_ordered', state, False)
-                        state = update_state_file_and_state(file_name, 'pmax_bbands_sell_id', state, "")
-                    if order["strategy"] == "rsi_trading":
-                        await telegram_bot_sendtext(f"* {order['symbol']}-{order['interval']} - RSI-TRADING - ORDER CANCELLED* Order ID = {id}", True)
-                        state = update_state_file_and_state(file_name, 'rsi_trading_bought', state,False)
-                        state = update_state_file_and_state(file_name, 'rsi_trading_buy_price', state,0)
-                        state = update_state_file_and_state(file_name, 'rsi_trading_bought_amount', state,0)
-                    if order["strategy"] == "rsi_trading_alt":
-                        await telegram_bot_sendtext(f"* {order['symbol']}-{order['interval']} - RSI-TRADING-ALT - ORDER CANCELLED* Order ID = {id}", True)
-                        state = update_state_file_and_state(file_name, 'rsi_trading_alt_bought', False)
-                        state = update_state_file_and_state(file_name, 'rsi_trading_alt_buy_price', 0)
-                        state = update_state_file_and_state(file_name, 'rsi_trading_alt_bought_amount', 0)
-                    if order["strategy"] == "rsi_bbands":
-                        await telegram_bot_sendtext(f"* {order['symbol']}-{order['interval']} - RSI-BBANDS - ORDER CANCELLED* Order ID = {id}", True)
-                        state = update_state_file_and_state(file_name, 'rsi_bbands_alt_bought', state, False)
-                        state = update_state_file_and_state(file_name, 'rsi_bbands_alt_bought_amount', state, 0)
-                        state = update_state_file_and_state(file_name, 'rsi_bbands_alt_buy_price', state, 0)
-                        state = update_state_file_and_state(file_name, 'rsi_bbands_alt_sell_price', state, 0)
-                        state = update_state_file_and_state(file_name, 'rsi_bbands_alt_has_ordered', state, False)
-                        state = update_state_file_and_state(file_name, 'rsi_bbands_alt_sell_id', state, "")
-                        state = update_state_file_and_state(file_name, 'rsi_bbands_alt_buy_id', state, "")  
-                    if order["strategy"] == "rsi_bbands_alt":
-                        await telegram_bot_sendtext(f"* {order['symbol']}-{order['interval']} - RSI-BBANDS-26 - ORDER CANCELLED* Order ID = {id}", True)
-                        state = update_state_file_and_state(file_name, 'rsi_bbands_alt_bought', state, False)
-                        state = update_state_file_and_state(file_name, 'rsi_bbands_alt_bought_amount', state, 0)
-                        state = update_state_file_and_state(file_name, 'rsi_bbands_alt_buy_price', state, 0)
-                        state = update_state_file_and_state(file_name, 'rsi_bbands_alt_sell_price', state, 0)
-                        state = update_state_file_and_state(file_name, 'rsi_bbands_alt_has_ordered', state, False)
-                        state = update_state_file_and_state(file_name, 'rsi_bbands_alt_sell_id', state, "")
-                        state = update_state_file_and_state(file_name, 'rsi_bbands_alt_buy_id', state, "")
+    #         for order in existing_data:
+    #             if order['id'] == id:
+    #                 with open(cancelled_path, 'r') as file:
+    #                     cancelled_data = json.load(file)
+    #                 with open(cancelled_path, 'w') as file:
+    #                     cancelled_data.append(order)
+    #                     json.dump(cancelled_data, file, indent=2)
+    #                 update_update_file(self.parity["symbol"], True)
+    #                 if order["strategy"] == "pmax_bbands":
+    #                     await telegram_bot_sendtext(f"* {order['symbol']}-{order['interval']} - PMAX-BBANDS - ORDER CANCELLED* Order ID = {id}", True)
+    #                     state = update_state_file_and_state(file_name, 'pmax_bbands_buy_id', state, "")
+    #                     state = update_state_file_and_state(file_name, 'pmax_bbands_bought', state, False)
+    #                     state = update_state_file_and_state(file_name, 'pmax_bbands_buy_price', state, 0)
+    #                     state = update_state_file_and_state(file_name, 'pmax_bbands_sell_price', state, 0)
+    #                     state = update_state_file_and_state(file_name, 'pmax_bbands_bought_amount', state, 0)
+    #                     state = update_state_file_and_state(file_name, 'pmax_bbands_has_ordered', state, False)
+    #                     state = update_state_file_and_state(file_name, 'pmax_bbands_sell_id', state, "")
+    #                 if order["strategy"] == "rsi_trading":
+    #                     await telegram_bot_sendtext(f"* {order['symbol']}-{order['interval']} - RSI-TRADING - ORDER CANCELLED* Order ID = {id}", True)
+    #                     state = update_state_file_and_state(file_name, 'rsi_trading_bought', state,False)
+    #                     state = update_state_file_and_state(file_name, 'rsi_trading_buy_price', state,0)
+    #                     state = update_state_file_and_state(file_name, 'rsi_trading_bought_amount', state,0)
+    #                 if order["strategy"] == "rsi_trading_alt":
+    #                     await telegram_bot_sendtext(f"* {order['symbol']}-{order['interval']} - RSI-TRADING-ALT - ORDER CANCELLED* Order ID = {id}", True)
+    #                     state = update_state_file_and_state(file_name, 'rsi_trading_alt_bought', False)
+    #                     state = update_state_file_and_state(file_name, 'rsi_trading_alt_buy_price', 0)
+    #                     state = update_state_file_and_state(file_name, 'rsi_trading_alt_bought_amount', 0)
+    #                 if order["strategy"] == "rsi_bbands":
+    #                     await telegram_bot_sendtext(f"* {order['symbol']}-{order['interval']} - RSI-BBANDS - ORDER CANCELLED* Order ID = {id}", True)
+    #                     state = update_state_file_and_state(file_name, 'rsi_bbands_alt_bought', state, False)
+    #                     state = update_state_file_and_state(file_name, 'rsi_bbands_alt_bought_amount', state, 0)
+    #                     state = update_state_file_and_state(file_name, 'rsi_bbands_alt_buy_price', state, 0)
+    #                     state = update_state_file_and_state(file_name, 'rsi_bbands_alt_sell_price', state, 0)
+    #                     state = update_state_file_and_state(file_name, 'rsi_bbands_alt_has_ordered', state, False)
+    #                     state = update_state_file_and_state(file_name, 'rsi_bbands_alt_sell_id', state, "")
+    #                     state = update_state_file_and_state(file_name, 'rsi_bbands_alt_buy_id', state, "")  
+    #                 if order["strategy"] == "rsi_bbands_alt":
+    #                     await telegram_bot_sendtext(f"* {order['symbol']}-{order['interval']} - RSI-BBANDS-26 - ORDER CANCELLED* Order ID = {id}", True)
+    #                     state = update_state_file_and_state(file_name, 'rsi_bbands_alt_bought', state, False)
+    #                     state = update_state_file_and_state(file_name, 'rsi_bbands_alt_bought_amount', state, 0)
+    #                     state = update_state_file_and_state(file_name, 'rsi_bbands_alt_buy_price', state, 0)
+    #                     state = update_state_file_and_state(file_name, 'rsi_bbands_alt_sell_price', state, 0)
+    #                     state = update_state_file_and_state(file_name, 'rsi_bbands_alt_has_ordered', state, False)
+    #                     state = update_state_file_and_state(file_name, 'rsi_bbands_alt_sell_id', state, "")
+    #                     state = update_state_file_and_state(file_name, 'rsi_bbands_alt_buy_id', state, "")
 
         # remove from open
         with open(file_name, 'w') as file:

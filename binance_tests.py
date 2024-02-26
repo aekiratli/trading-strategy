@@ -15,36 +15,16 @@ async def main():
     # initialise the client
     client = await AsyncClient.create(BINANCE_API_KEY, BINANCE_API_SECRET)
     try:
-        # order = await client.create_order(
-        #     symbol='BNBUSDT',
-        #     side=AsyncClient.SIDE_BUY,
-        #     type=AsyncClient.ORDER_TYPE_MARKET,
-        #     #timeInForce=AsyncClient.TIME_IN_FORCE_GTC,
-        #     quantity=0.05,
-        #     #price='373.8000',
-        # )
+        resp = await client.get_symbol_info('BNBUSDT')
+        amount = 0.6149
+        price = 390.2896
+        tick_size = float(resp['filters'][0]['tickSize'])
+        step_size = float(resp['filters'][1]['stepSize'])
+        print(f"tick size: {tick_size}, step size: {step_size}")
 
-        order = await client.get_symbol_info('BNBUSDT')
-
-        # print(order)
-        # CANCEL ORDER
-        # result = await client.cancel_order(
-        #     symbol='BNBUSDT',
-        #     orderId='5047831583',
-        # )
-
-        # print(result)
-        #check order status
-        # order = await client.get_my_trades(
-        #     symbol='BNBUSDT',
-        #     orderId='5047865079',
-        # )
-        print(order)
-        order = await client.get_symbol_info('MATICUSDT')
-        # calculate how much amount can 2400 USDT buy
-        # order = await client.get_order_book(
-        #     symbol='MATICUSDT',
-        print(order)
+        amount = round(amount / step_size) * step_size
+        price = round(price / tick_size) * tick_size
+        print(f"amount: {amount}, price: {price}")
 
     except Exception as e:
         print(traceback.format_exc())

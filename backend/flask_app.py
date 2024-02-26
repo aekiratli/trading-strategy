@@ -343,6 +343,19 @@ def create_order():
     if not request.is_json:
         return jsonify({"msg": "Missing JSON in request"}), 400
     data = request.get_json()
+    # get ticker size
+    symbol_info = client.get_symbol_info(data['symbol'])
+    filters = symbol_info['filters']
+    bc = 0
+    for filter in filters:
+        if filter['filterType'] == 'LOT_SIZE':
+            step_size = float(filter['stepSize'])
+            bc += 1
+        if [filter['filterType'] == 'PRICE_FILTER']:
+            tick_size = float(filter['tickSize'])
+            bc += 1
+        if bc == 2:
+                break
     try:
         order_data = {
             'symbol': data['symbol'],
@@ -352,9 +365,13 @@ def create_order():
 
         if data['type'].upper() == 'LIMIT':
             order_data['timeInForce'] = "GTC"
-            order_data['price'] = data['price']
-
-        order_data['quantity'] = data['amount']
+            price = float(data['price'])
+            price = round(price / tick_size) * tick_size
+            order_data['price'] = price
+            
+        amount = float(data['amount'])
+        amount = round(amount / step_size) * step_size
+        order_data['quantity'] = amount
 
         order = client.create_order(**order_data)
         orderId = order['orderId']
@@ -395,7 +412,8 @@ def create_order():
         with open(f'{app.config["ORDER_PATH"]}/open.json', 'w') as file:
             existing_data.append(data)
             json.dump(existing_data, file, indent=2)
-
+            
+        requests.get(f'https://api.telegram.org/bot{app.config["TELEGRAM_KEY"]}/sendMessage?chat_id={app.config["CHAT_ID"]}&text=Order+ID%3A+{id}+created')
         return jsonify(order), 200
     except Exception as e:
         print(traceback.format_exc())
