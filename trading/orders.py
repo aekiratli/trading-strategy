@@ -77,6 +77,7 @@ class Orders:
             'action': action,
             'trade_id': 0,
             'strategy': strategy,
+            'orderId': order['orderId'],
             'id': id
         }
 
@@ -146,7 +147,7 @@ class Orders:
             for order in existing_data:
                 if order['id'] == id:
                     # remove from active_trades
-                    async with asyncio.Lock():
+                    if order["action"] == "sell":
                         with open(f'{self.state_path}/active_trades.json', 'r') as file:
                             existing_data = json.load(file)
                             existing_data.remove(f'{self.parity["symbol"]}{self.parity["interval"]}_{order["strategy"]}')
@@ -161,6 +162,9 @@ class Orders:
         # remove from open
         with open(file_name, 'w') as file:
             json.dump([order for order in existing_data if order['id'] != id], file, indent=2)
+
+        #await telegram_bot_sendtext(f"*{self.parity["symbol"]}-{self.parity["interval"]} - Order is fulfilled.", True)
+
 
     async def cancel_order(self, id):
         file_name = f'{self.open_path}'
@@ -227,7 +231,7 @@ class Orders:
                         state = update_state_file_and_state(file_name, 'rsi_bbands_alt_sell_id', state, "")
                         state = update_state_file_and_state(file_name, 'rsi_bbands_alt_buy_id', state, "")  
                     if order["strategy"] == "rsi_bbands_alt":
-                        await telegram_bot_sendtext(f"* {order['symbol']}-{order['interval']} - RSI-BBANDS-ALT - ORDER CANCELLED* Order ID = {id}", True)
+                        await telegram_bot_sendtext(f"* {order['symbol']}-{order['interval']} - RSI-BBANDS-26 - ORDER CANCELLED* Order ID = {id}", True)
                         state = update_state_file_and_state(file_name, 'rsi_bbands_alt_bought', state, False)
                         state = update_state_file_and_state(file_name, 'rsi_bbands_alt_bought_amount', state, 0)
                         state = update_state_file_and_state(file_name, 'rsi_bbands_alt_buy_price', state, 0)

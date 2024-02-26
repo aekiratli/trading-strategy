@@ -31,7 +31,7 @@ async def rsi_bbands_alt(parity, state, file_name, logger, lowerband, rsi_value,
             # orderId state update
             state = update_state_file_and_state(file_name, 'rsi_bbands_alt_buy_orderId', state, orderId)
             await asyncio.sleep(1)
-            await telegram_bot_sendtext(f"* {parity['symbol']}-{parity['interval']} - RSI-BBANDS-ALT - LIMIT BUY ORDER* Buy Price = {buy_price}, Amount = {amount}", True)
+            await telegram_bot_sendtext(f"* {parity['symbol']}-{parity['interval']} - RSI-BBANDS-26 - LIMIT BUY ORDER* Buy Price = {buy_price}, Amount = {amount}", True)
             state = update_state_file_and_state(file_name, 'rsi_bbands_alt_bought_amount', state, amount)
             state = update_state_file_and_state(file_name, 'rsi_bbands_alt_buy_price', state, buy_price)
             state = update_state_file_and_state(file_name, 'rsi_bbands_alt_sell_price', state, sell_price)
@@ -48,7 +48,7 @@ async def rsi_bbands_alt(parity, state, file_name, logger, lowerband, rsi_value,
                     is_order_fullfilled = True
                     state = update_state_file_and_state(file_name, 'rsi_bbands_alt_buy_orderId', state, "")
                 else:
-                    await asyncio.sleep(30)
+                    await asyncio.sleep(10)
                     return state
                 
             if is_order_fullfilled:
@@ -64,7 +64,7 @@ async def rsi_bbands_alt(parity, state, file_name, logger, lowerband, rsi_value,
                 await asyncio.sleep(1)
 
                 await logger.save({"zone":"buy","bbands": lowerband, "rsi": rsi_value, "price": close, "amount": amount, "quota": quota,  "strategy": "rsi_bbands_alt"})
-                await telegram_bot_sendtext(f"*{parity['symbol']}-{parity['interval']} - RSI-BBANDS-ALT - LIMIT BUY ORDER COMPLETED* Buy Price = {close}, Amount = {amount}%0A%0A * {parity['symbol']}-{parity['interval']} - RSI-BBANDS-ALT - LIMIT SELL ORDER * Sell Price = {sell_price}, Amount = {amount}", True)
+                await telegram_bot_sendtext(f"*{parity['symbol']}-{parity['interval']} - RSI-BBANDS-26 - LIMIT BUY ORDER COMPLETED* Buy Price = {close}, Amount = {amount}%0A%0A * {parity['symbol']}-{parity['interval']} - RSI-BBANDS-26 - LIMIT SELL ORDER * Sell Price = {sell_price}, Amount = {amount}", True)
                 state = update_state_file_and_state(file_name, 'rsi_bbands_alt_bought', state, True)
                 state = update_state_file_and_state(file_name, 'rsi_bbands_alt_buy_id', state, "")
                 
@@ -79,7 +79,7 @@ async def rsi_bbands_alt(parity, state, file_name, logger, lowerband, rsi_value,
                     is_order_fullfilled = True
                     state = update_state_file_and_state(file_name, 'rsi_bbands_alt_sell_orderId', state, "")
                 else:
-                    await asyncio.sleep(30)
+                    await asyncio.sleep(10)
                     return state
                 
             if is_order_fullfilled:
@@ -88,7 +88,7 @@ async def rsi_bbands_alt(parity, state, file_name, logger, lowerband, rsi_value,
                 quota = parity['rsi_bbands_alt_quota']
                 amount = state["rsi_bbands_alt_bought_amount"]
                 await logger.save({"zone":"sell", "bbands": lowerband, "rsi": rsi_value, "price": close, "amount": amount, "quota": quota,  "strategy": "rsi_bbands_alt"})
-                await telegram_bot_sendtext(f"* {parity['symbol']}-{parity['interval']} - RSI-BBANDS-ALT - LIMIT SELL ORDER COMPLETED* Sell Price = {close}, Amount = {amount}", True)
+                await telegram_bot_sendtext(f"* {parity['symbol']}-{parity['interval']} - RSI-BBANDS-26 - LIMIT SELL ORDER COMPLETED* Sell Price = {close}, Amount = {amount}", True)
                 await orders.complete_order(state["rsi_bbands_alt_sell_id"])
                 state = update_state_file_and_state(file_name, 'rsi_bbands_alt_bought', state, False)
                 state = update_state_file_and_state(file_name, 'rsi_bbands_alt_bought_amount', state, 0)
@@ -123,7 +123,7 @@ async def rsi_bbands(parity, state, file_name, logger, lowerband, rsi_value, clo
             state = update_state_file_and_state(file_name, 'rsi_bbands_buy_orderId', state, orderId)
             await asyncio.sleep(1)
 
-            await telegram_bot_sendtext(f"*{parity['symbol']}-{parity['interval']} - RSI-BBANDS - LIMIT BUY ORDER* Buy Price = {buy_price}, Amount = {amount}", True)
+            await telegram_bot_sendtext(f"*{parity['symbol']}-{parity['interval']} - RSI-BBANDS-21 - LIMIT BUY ORDER* Buy Price = {buy_price}, Amount = {amount}", True)
 
             state = update_state_file_and_state(file_name, 'rsi_bbands_bought_amount', state, amount)
             state = update_state_file_and_state(file_name, 'rsi_bbands_buy_price', state, buy_price)
@@ -142,7 +142,7 @@ async def rsi_bbands(parity, state, file_name, logger, lowerband, rsi_value, clo
                     is_order_fullfilled = True
                     state = update_state_file_and_state(file_name, 'rsi_bbands_buy_orderId', state, "")
                 else:
-                    await asyncio.sleep(30)
+                    await asyncio.sleep(10)
                     return state
             
             if is_order_fullfilled:
@@ -153,13 +153,13 @@ async def rsi_bbands(parity, state, file_name, logger, lowerband, rsi_value, clo
                 sell_id = str(uuid.uuid4())
 
                 orderId = await orders.create_order(amount, close, "sell", 'rsi_bbands', 'limit', sell_id)
-                state = update_state_file_and_state(file_name, 'rsi_bbands_sell_orderId', state, sell_id)
+                state = update_state_file_and_state(file_name, 'rsi_bbands_sell_orderId', state, orderId)
 
                 await orders.complete_order(state["rsi_bbands_buy_id"])
                 state = update_state_file_and_state(file_name, 'rsi_bbands_buy_id', state, "")
 
                 await logger.save({"zone":"buy", "bbands": lowerband, "rsi": rsi_value, "price": close, "amount": amount, "quota": quota,  "strategy": "rsi_bbands"})
-                await telegram_bot_sendtext(f"* {parity['symbol']}-{parity['interval']} - RSI-BBANDS - LIMIT BUY ORDER COMPLETED* Buy Price = {close}, Amount = {amount}%0A%0A *{parity['symbol']}-{parity['interval']} - RSI-BBANDS - LIMIT SELL ORDER* Sell Price = {sell_price}, Amount = {amount}", True)
+                await telegram_bot_sendtext(f"* {parity['symbol']}-{parity['interval']} - RSI-BBANDS-21 - LIMIT BUY ORDER COMPLETED* Buy Price = {close}, Amount = {amount}%0A%0A *{parity['symbol']}-{parity['interval']} - RSI-BBANDS - LIMIT SELL ORDER* Sell Price = {sell_price}, Amount = {amount}", True)
                 state = update_state_file_and_state(file_name, 'rsi_bbands_bought', state, True)
 
 
@@ -174,7 +174,7 @@ async def rsi_bbands(parity, state, file_name, logger, lowerband, rsi_value, clo
                     is_order_fullfilled = True
                     state = update_state_file_and_state(file_name, 'rsi_bbands_sell_orderId', state, "")
                 else:
-                    await asyncio.sleep(30)
+                    await asyncio.sleep(10)
                     return state
 
             logging.info(f"selling for rsi_bbands -> rsi_value -> {rsi_value}, bbands -> {lowerband}, symbol -> {parity['symbol']}, interval -> {parity['interval']}, close -> {close}")

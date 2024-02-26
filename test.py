@@ -7,14 +7,16 @@ async def func1():
 
 async def func2():
     print("func2")
-    await asyncio.sleep(2)
+    await asyncio.sleep(4)
     print("func2 again")
 
 async def func3():
     asyncio.gather(func1(), func2())
 
 async def main():
+    print("main")
     await asyncio.gather(func1(), func2(), func3())
+    print("done")
     #await func1()
     #await func2()
 

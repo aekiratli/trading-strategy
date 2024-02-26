@@ -10,7 +10,7 @@ from binance.client import AsyncClient
 
 async def pmax_bbands(parity, state, file_name, logger, zone, lowerband, pmax, close, orders: Orders, client: AsyncClient) -> dict:
 
-    if parity["pmax_bbands_signal"] == True:
+    if parity["pmax_bbands_sim"] == True:
         return state
 
     if parity["pmax_bbands"] == True and parity["pmax"] == True and parity["bbands"] == True:
@@ -60,7 +60,7 @@ async def pmax_bbands(parity, state, file_name, logger, zone, lowerband, pmax, c
                     is_order_fullfilled = True
                     state = update_state_file_and_state(file_name, 'pmax_bbands_buy_orderId', state, "")
                 else:
-                    await asyncio.sleep(30)
+                    await asyncio.sleep(10)
                     return state
             
             if is_order_fullfilled:
@@ -88,7 +88,7 @@ async def pmax_bbands(parity, state, file_name, logger, zone, lowerband, pmax, c
                     is_order_fullfilled = True
                     state = update_state_file_and_state(file_name, 'pmax_bbands_sell_orderId', state, "")
                 else:
-                    await asyncio.sleep(30)
+                    await asyncio.sleep(10)
                     return state
                 
             if is_order_fullfilled:

@@ -20,6 +20,8 @@ load_dotenv()
 warnings.filterwarnings('ignore')
 TELEGRAM_KEY = os.getenv("TELEGRAM_KEY")
 CHAT_ID = os.getenv("CHAT_ID")
+BINANCE_API_KEY = os.getenv("BINANCE_API_KEY")
+BINANCE_API_SECRET = os.getenv("BINANCE_API_SECRET")
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 async def main(df, parity, task_id, file_name, state, rsi_states, active_trades):
@@ -215,14 +217,14 @@ async def main(df, parity, task_id, file_name, state, rsi_states, active_trades)
             rsi_value = rsi.iloc[-1]
             lowerband = lowerband.iloc[-1]
             zone = pmax_df.iloc[-1,-1]
-            if len(active_trades) <= 3:
+            if len(active_trades) <= 4:
                 if not active_trades:
                     tasks = [
-                        pmax_bbands(parity, state, file_name, logger, zone, lowerband, pmax, close, orders),
-                        rsi_bbands(parity, state, file_name, logger, lowerband, rsi_value, close, orders),
-                        rsi_bbands_alt(parity, state, file_name, logger, lowerband, rsi_value, close, orders),
-                        rsi_trading(parity, state, file_name, logger, rsi_value, close, orders),
-                        rsi_trading_alt(parity, state, file_name, logger, rsi_value, close, orders)
+                        pmax_bbands(parity, state, file_name, logger, zone, lowerband, pmax, close, orders, client),
+                        rsi_bbands(parity, state, file_name, logger, lowerband, rsi_value, close, orders, client),
+                        rsi_bbands_alt(parity, state, file_name, logger, lowerband, rsi_value, close, orders, client),
+                        rsi_trading(parity, state, file_name, logger, rsi_value, close, orders, client),
+                        rsi_trading_alt(parity, state, file_name, logger, rsi_value, close, orders, client)
                     ]
                     results = await asyncio.gather(*tasks)
                     # Update state based on results
@@ -233,15 +235,15 @@ async def main(df, parity, task_id, file_name, state, rsi_states, active_trades)
                     tasks = []
                     for trade in active_trades:
                         if trade == parity['symbol'] + parity['interval'] + "_pmax_bbands":
-                            tasks.append(pmax_bbands(parity, state, file_name, logger, zone, lowerband, pmax, close, orders))
+                            tasks.append(pmax_bbands(parity, state, file_name, logger, zone, lowerband, pmax, close, orders, client))
                         if trade == parity['symbol'] + parity['interval'] + "_rsi_bbands":
-                            tasks.append(rsi_bbands(parity, state, file_name, logger, lowerband, rsi_value, close, orders))
+                            tasks.append(rsi_bbands(parity, state, file_name, logger, lowerband, rsi_value, close, orders, client))
                         if trade == parity['symbol'] + parity['interval'] + "_rsi_bbands_alt":
-                            tasks.append(rsi_bbands_alt(parity, state, file_name, logger, lowerband, rsi_value, close, orders))
+                            tasks.append(rsi_bbands_alt(parity, state, file_name, logger, lowerband, rsi_value, close, orders, client))
                         if trade == parity['symbol'] + parity['interval'] + "_rsi_trading":
-                            tasks.append(rsi_trading(parity, state, file_name, logger, rsi_value, close, orders))
+                            tasks.append(rsi_trading(parity, state, file_name, logger, rsi_value, close, orders, client))
                         if trade == parity['symbol'] + parity['interval'] + "_rsi_trading_alt":
-                            tasks.append(rsi_trading_alt(parity, state, file_name, logger, rsi_value, close, orders))
+                            tasks.append(rsi_trading_alt(parity, state, file_name, logger, rsi_value, close, orders, client))
                     results = await asyncio.gather(*tasks)
                     # Update state based on results
                     for result in results:
