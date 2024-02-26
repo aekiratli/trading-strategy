@@ -15,14 +15,16 @@ async def main():
     # initialise the client
     client = await AsyncClient.create(BINANCE_API_KEY, BINANCE_API_SECRET)
     try:
-        order = await client.create_order(
-            symbol='BNBUSDT',
-            side=AsyncClient.SIDE_BUY,
-            type=AsyncClient.ORDER_TYPE_MARKET,
-            #timeInForce=AsyncClient.TIME_IN_FORCE_GTC,
-            quantity=0.05,
-            #price='373.8000',
-        )
+        # order = await client.create_order(
+        #     symbol='BNBUSDT',
+        #     side=AsyncClient.SIDE_BUY,
+        #     type=AsyncClient.ORDER_TYPE_MARKET,
+        #     #timeInForce=AsyncClient.TIME_IN_FORCE_GTC,
+        #     quantity=0.05,
+        #     #price='373.8000',
+        # )
+
+        order = await client.get_symbol_info('BNBUSDT')
 
         # print(order)
         # CANCEL ORDER
@@ -37,6 +39,11 @@ async def main():
         #     symbol='BNBUSDT',
         #     orderId='5047865079',
         # )
+        print(order)
+        order = await client.get_symbol_info('MATICUSDT')
+        # calculate how much amount can 2400 USDT buy
+        # order = await client.get_order_book(
+        #     symbol='MATICUSDT',
         print(order)
 
     except Exception as e:

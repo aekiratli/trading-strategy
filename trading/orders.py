@@ -38,9 +38,14 @@ class Orders:
                 json.dump([], file, indent=2)
 
     async def create_order(self, amount, price, action, strategy, market_type, id):
-        # use 4 decimal places for the price and amount
-        price = round(price, 4)
-        amount = round(amount, 4)
+        # get ticksize and stepsize for the symbol
+        resp = await self.get_symbol_info(self.parity["symbol"])
+        tick_size = float(resp['filters'][0]['tickSize'])
+        step_size = float(resp['filters'][1]['stepSize'])
+        # round the price and amount to the ticksize and stepsize
+        price = round(price, tick_size)
+        amount = round(amount, step_size)
+        
         order_data = {
             'symbol': self.parity["symbol"],
             'side': AsyncClient.SIDE_BUY if action == 'buy' else AsyncClient.SIDE_SELL,
