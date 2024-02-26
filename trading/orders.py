@@ -1,6 +1,7 @@
 import os
 import json
 from datetime import datetime
+import random
 from dotenv import load_dotenv
 import asyncio
 import uuid
@@ -13,7 +14,7 @@ ORDER_PATH = os.getenv("ORDER_PATH")
 STATE_PATH = os.getenv("STATE_PATH")
 
 class Orders:
-    def __init__(self, parity: str, client: AsyncClient):
+    def __init__(self, parity: str, client: AsyncClient, logger):
         self.parity = parity
         self.client = client
         self.main_path = f'{ORDER_PATH}'
@@ -39,12 +40,16 @@ class Orders:
 
     async def create_order(self, amount, price, action, strategy, market_type, id):
         # get ticksize and stepsize for the symbol
-        resp = await self.get_symbol_info(self.parity["symbol"])
+        resp = await self.client.get_symbol_info(self.parity["symbol"])
         tick_size = float(resp['filters'][0]['tickSize'])
         step_size = float(resp['filters'][1]['stepSize'])
         # round the price and amount to the ticksize and stepsize
-        price = round(price, tick_size)
-        amount = round(amount, step_size)
+        amount = round(amount / step_size) * step_size
+        price = round(price / tick_size) * tick_size
+        # log the size and price
+        await logger.info(f"Amount: {amount}, Price: {price}, Symbol: {self.parity['symbol']}")
+        await logger.info(f"Tick Size: {tick_size}, Step Size: {step_size}")
+
         
         order_data = {
             'symbol': self.parity["symbol"],
@@ -59,15 +64,22 @@ class Orders:
 
         # add to active_trades
         async with asyncio.Lock():
+            # usingg lock not always working when using gather
+            # wait randomly for 0.00 to 0.99 seconds
+            await asyncio.sleep(round(random.uniform(0.00, 0.99), 2))
             with open(f'{self.state_path}/active_trades.json', 'r') as file:
                 existing_data = json.load(file)
-                if len(existing_data) == 3:
+                if len(existing_data) == 4:
                     return
                 else:
-                    order = await self.client.create_order(**order_data)
-                    existing_data.append(f'{self.parity["symbol"]}{self.parity["interval"]}_{strategy}')
-                    with open(f'{self.state_path}/active_trades.json', 'w') as file:
-                        json.dump(existing_data, file, indent=2)
+                    try:
+                        order = await self.client.create_order(**order_data)
+                        existing_data.append(f'{self.parity["symbol"]}{self.parity["interval"]}_{strategy}')
+                        with open(f'{self.state_path}/active_trades.json', 'w') as file:
+                            json.dump(existing_data, file, indent=2)
+                    except Exception as e:
+                        await telegram_bot_sendtext(f"*{self.parity["symbol"]}-{self.parity["interval"]} - Order creation failed.* due to the : {e}", True)
+                        raise e
 
 
         ts = int(datetime.now().timestamp())

@@ -60,7 +60,7 @@ async def main(df, parity, task_id, file_name, state, rsi_states, active_trades)
     INTERVAL = parity['interval']
     logger = Logger(f"{parity['symbol']}{parity['interval']}")
     client = await AsyncClient.create(BINANCE_API_KEY, BINANCE_API_SECRET)
-    orders = Orders(parity, client)
+    orders = Orders(parity, client, logger)
     bm = BinanceSocketManager(client)
     ts = bm.kline_socket(SYMBOL, interval=INTERVAL)
 
