@@ -124,13 +124,13 @@ def initialize_update_files(file_names):
         update_file_path = f'{UPDATE_PATH}/{file_name}_update.json'
         if not os.path.exists(update_file_path):
             with open(update_file_path, 'w') as state_file:
-                json.dump({'should_update':False }, state_file, indent=2)
+                json.dump({'should_update':False, 'is_intervened': False }, state_file, indent=2)
 
 def should_update_parity(file_name):
     update_file_path = f'{UPDATE_PATH}/{file_name}_update.json'
     with open(update_file_path, 'r') as update_file:
         data = json.load(update_file)
-        return data['should_update']
+        return data['should_update'], data['is_intervened']
     
 def update_update_file(file_name, should_update):
     update_file_path = f'{UPDATE_PATH}/{file_name}_update.json'

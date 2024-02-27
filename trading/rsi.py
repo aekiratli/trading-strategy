@@ -10,8 +10,8 @@ from binance.client import AsyncClient
 
 async def rsi_trading(parity, state, file_name, logger, rsi_value, close, orders: Orders, client: AsyncClient):
 
-    if parity["rsi_trading_sim"] == True:
-        return state
+    is_simulation = parity["rsi_trading_sim"]
+        
 
     if parity["rsi_trading"] == True and parity["rsi"] == True:
 
@@ -22,17 +22,17 @@ async def rsi_trading(parity, state, file_name, logger, rsi_value, close, orders
             quota = parity['rsi_trading_quota']
             amount = get_amount_to_buy(quota, parity['symbol'])
             buy_id = str(uuid.uuid4())
-            await orders.create_order(amount, close, "buy", 'rsi_trading', 'market', buy_id)
+            await orders.create_order(amount, close, "buy", 'rsi_trading', 'market', buy_id, is_simulation)
             await orders.complete_order(buy_id)
             await asyncio.sleep(5)
             await logger.save({"zone": "buy", "price": close, "amount": amount, "quota": quota,  "strategy": "rsi_trading"})
             
             sell_id = str(uuid.uuid4())
-            orderId = await orders.create_order(amount, close, "sell", 'rsi_trading', 'limit', sell_id)
+            orderId = await orders.create_order(amount, close, "sell", 'rsi_trading', 'limit', sell_id, is_simulation)
             state = update_state_file_and_state(file_name, 'rsi_trading_sell_orderId', state, orderId)
             state = update_state_file_and_state(file_name, 'rsi_trading_sell_id', state, sell_id)
 
-            await telegram_bot_sendtext(f"* {parity['symbol']}-{parity['interval']} - RSI - MARKET BUY* Price = {close}, Amount = {amount}, RSI = {rsi_value}%0A%0A * {parity['symbol']}-{parity['interval']} - RSI - LIMIT ORDER SELL* Price = {close * parity['rsi_trading_sell_percentage'] }, Amount = {amount}", True)
+            await telegram_bot_sendtext(f"*simulation={is_simulation}-{parity['symbol']}-{parity['interval']} - RSI - MARKET BUY* Price = {close}, Amount = {amount}, RSI = {rsi_value}%0A%0A * {parity['symbol']}-{parity['interval']} - RSI - LIMIT ORDER SELL* Price = {close * parity['rsi_trading_sell_percentage'] }, Amount = {amount}", True)
             state = update_state_file_and_state(file_name, 'rsi_trading_bought', state, True)
             state = update_state_file_and_state(file_name, 'rsi_trading_buy_price', state, close)
             state = update_state_file_and_state(file_name, 'rsi_trading_bought_amount', state, amount)
@@ -42,14 +42,17 @@ async def rsi_trading(parity, state, file_name, logger, rsi_value, close, orders
 
             is_order_fullfilled = False
             if not is_order_fullfilled:
-                orderId = state["rsi_trading_sell_orderId"]
-                order = await client.get_order(symbol=parity['symbol'], orderId = orderId)
-                if order["status"] == "FILLED":
+                if is_simulation:
                     is_order_fullfilled = True
-                    state = update_state_file_and_state(file_name, 'rsi_trading_sell_orderId', state, "")
                 else:
-                    await asyncio.sleep(10)
-                    return state
+                    orderId = state["rsi_trading_sell_orderId"]
+                    order = await client.get_order(symbol=parity['symbol'], orderId = orderId)
+                    if order["status"] == "FILLED":
+                        is_order_fullfilled = True
+                        state = update_state_file_and_state(file_name, 'rsi_trading_sell_orderId', state, "")
+                    else:
+                        await asyncio.sleep(10)
+                        return state
 
             logging.info(
                 f"selling for rsi_trading -> rsi_value -> {rsi_value}, symbol -> {parity['symbol']}, interval -> {parity['interval']}, close -> {close}")
@@ -58,7 +61,7 @@ async def rsi_trading(parity, state, file_name, logger, rsi_value, close, orders
             sell_id = state["rsi_trading_alt_sell_id"]
             await orders.complete_order(sell_id)
             await logger.save({"zone": "sell", "price": close, "amount": amount, "quota": quota, "strategy": "rsi_trading"})
-            await telegram_bot_sendtext(f" *{parity['symbol']}-{parity['interval']} - RSI - LIMIT SELL ORDER COMPLETED* Price = {close}, Amount = {amount}", True)
+            await telegram_bot_sendtext(f"*simulation={is_simulation}-{parity['symbol']}-{parity['interval']} - RSI - LIMIT SELL ORDER COMPLETED* Price = {close}, Amount = {amount}", True)
             state = update_state_file_and_state(file_name, 'rsi_trading_bought', state, False)
             state = update_state_file_and_state(file_name, 'rsi_trading_buy_price', state, 0)
             state = update_state_file_and_state(file_name, 'rsi_trading_bought_amount', state, 0)
@@ -69,8 +72,7 @@ async def rsi_trading(parity, state, file_name, logger, rsi_value, close, orders
 
 async def rsi_trading_alt(parity, state, file_name, logger, rsi_value, close, orders: Orders, client: AsyncClient):
 
-    if parity["rsi_trading_alt_sim"] == True:
-        return state
+    is_simulation = parity["rsi_trading_alt_sim"]
     
     if parity["rsi_trading_alt"] == True and parity["rsi"] == True:
 
@@ -82,35 +84,37 @@ async def rsi_trading_alt(parity, state, file_name, logger, rsi_value, close, or
             amount = get_amount_to_buy(quota, parity['symbol'])
 
             buy_id = str(uuid.uuid4())
-            await orders.create_order(amount, close, "buy", 'rsi_trading', 'market', buy_id)
+            await orders.create_order(amount, close, "buy", 'rsi_trading', 'market', buy_id, is_simulation)
             await orders.complete_order(buy_id)
             await asyncio.sleep(5)
 
             sell_id = str(uuid.uuid4())
-            orderId = await orders.create_order(amount, close, "sell", 'rsi_trading', 'limit', sell_id)
+            orderId = await orders.create_order(amount, close, "sell", 'rsi_trading', 'limit', sell_id, is_simulation)
             state = update_state_file_and_state(file_name, 'rsi_trading_alt_sell_orderId', state, orderId)
             state = update_state_file_and_state(file_name, 'rsi_trading_alt_sell_id', state, sell_id)
-
             await logger.save({"zone": "buy", "price": close, "amount": amount, "quota": quota,  "strategy": "rsi_trading_alt"})
             state = update_state_file_and_state(file_name, 'rsi_trading_alt_bought', state, True)
             state = update_state_file_and_state(file_name, 'rsi_trading_alt_buy_price', state, close)
             state = update_state_file_and_state(file_name, 'rsi_trading_alt_bought_amount', state, amount)
-            await telegram_bot_sendtext(f" *{parity['symbol']}-{parity['interval']} - RSI 26 - MARKET BUY* Price = {close}, Amount = {amount}, RSI = {rsi_value}%0A%0A *{parity['symbol']}-{parity['interval']} - RSI ALT - LIMIT ORDER SELL* Price = {close * parity['rsi_trading_sell_percentage']}, Amount = {amount}", True)
+            await telegram_bot_sendtext(f"*simulation={is_simulation}-{parity['symbol']}-{parity['interval']} - RSI 26 - MARKET BUY* Price = {close}, Amount = {amount}, RSI = {rsi_value}%0A%0A *{parity['symbol']}-{parity['interval']} - RSI ALT - LIMIT ORDER SELL* Price = {close * parity['rsi_trading_sell_percentage']}, Amount = {amount}", True)
 
             
         if close >= state["rsi_trading_alt_buy_price"] * parity["rsi_trading_alt_sell_percentage"] and state["rsi_trading_alt_bought"] == True:
 
             is_order_fullfilled = False
             if not is_order_fullfilled:
-                orderId = state["rsi_trading_alt_sell_id"]
-                order = await client.get_order(symbol=parity['symbol'], orderId = orderId)
-                if order["status"] == "FILLED":
+                if is_simulation:
                     is_order_fullfilled = True
-                    state = update_state_file_and_state(file_name, 'rsi_trading_alt_sell_id', state, "")
                 else:
-                    await asyncio.sleep(10)
-                    return state
-                
+                    orderId = state["rsi_trading_alt_sell_id"]
+                    order = await client.get_order(symbol=parity['symbol'], orderId = orderId)
+                    if order["status"] == "FILLED":
+                        is_order_fullfilled = True
+                        state = update_state_file_and_state(file_name, 'rsi_trading_alt_sell_id', state, "")
+                    else:
+                        await asyncio.sleep(10)
+                        return state
+                    
             else:
 
                 logging.info(
@@ -120,7 +124,7 @@ async def rsi_trading_alt(parity, state, file_name, logger, rsi_value, close, or
                 sell_id = state["rsi_trading_alt_sell_id"]
                 await orders.complete_order(sell_id)
                 await logger.save({"zone": "sell", "price": close, "amount": amount, "quota": quota, "strategy": "rsi_trading_alt"})
-                await telegram_bot_sendtext(f" *{parity['symbol']}-{parity['interval']} - RSI 26 - LIMIT SELL ORDER COMPLETED* Price = {close}, Amount = {amount}", True)
+                await telegram_bot_sendtext(f"*simulation={is_simulation}-{parity['symbol']}-{parity['interval']} - RSI 26 - LIMIT SELL ORDER COMPLETED* Price = {close}, Amount = {amount}", True)
                 state = update_state_file_and_state(file_name, 'rsi_trading_alt_bought', state, False)
                 state = update_state_file_and_state(file_name, 'rsi_trading_alt_buy_price', state, 0)
                 state = update_state_file_and_state(file_name, 'rsi_trading_alt_bought_amount', state, 0)

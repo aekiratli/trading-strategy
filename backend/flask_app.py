@@ -206,7 +206,7 @@ def cancel_order(id):
     def update_update_file(file_name, should_update):
         update_file_path = f'{app.config["UPDATE_PATH"]}/{file_name}_update.json'
         with open(update_file_path, 'w') as update_file:
-            json.dump({'should_update':should_update }, update_file, indent=2)
+            json.dump({'should_update':should_update, 'is_intervened': True }, update_file, indent=2)
     open_path = f'{app.config["ORDER_PATH"]}/open.json'
     cancelled_path = f'{app.config["ORDER_PATH"]}/cancelled.json'
 
@@ -252,37 +252,18 @@ def cancel_order(id):
             file_name = file_name.lower()
             update_update_file(file_name, True)
             if order["strategy"] == "pmax_bbands":
-                update_state_file(file_name, 'pmax_bbands_buy_id', "")
                 update_state_file(file_name, 'pmax_bbands_bought', False)
-                update_state_file(file_name, 'pmax_bbands_buy_price', 0)
-                update_state_file(file_name, 'pmax_bbands_sell_price', 0)
-                update_state_file(file_name, 'pmax_bbands_bought_amount', 0)
                 update_state_file(file_name, 'pmax_bbands_has_ordered', False)
-                update_state_file(file_name, 'pmax_bbands_sell_id', "")
             if order["strategy"] == "rsi_trading":
                 update_state_file(file_name, 'rsi_trading_bought', False)
-                update_state_file(file_name, 'rsi_trading_buy_price', 0)
-                update_state_file(file_name, 'rsi_trading_bought_amount', 0)
             if order["strategy"] == "rsi_trading_alt":
                 update_state_file(file_name, 'rsi_trading_alt_bought', False)
-                update_state_file(file_name, 'rsi_trading_alt_buy_price', 0)
-                update_state_file(file_name, 'rsi_trading_alt_bought_amount', 0)
             if order["strategy"] == "rsi_bbands":
                 update_state_file(file_name, 'rsi_bbands_alt_bought', False)
-                update_state_file(file_name, 'rsi_bbands_alt_bought_amount', 0)
-                update_state_file(file_name, 'rsi_bbands_alt_buy_price', 0)
-                update_state_file(file_name, 'rsi_bbands_alt_sell_price', 0)
                 update_state_file(file_name, 'rsi_bbands_alt_has_ordered', False)
-                update_state_file(file_name, 'rsi_bbands_alt_sell_id', "")
-                update_state_file(file_name, 'rsi_bbands_alt_buy_id', "")  
             if order["strategy"] == "rsi_bbands_alt":
                 update_state_file(file_name, 'rsi_bbands_alt_bought', False)
-                update_state_file(file_name, 'rsi_bbands_alt_bought_amount', 0)
-                update_state_file(file_name, 'rsi_bbands_alt_buy_price', 0)
-                update_state_file(file_name, 'rsi_bbands_alt_sell_price', 0)
                 update_state_file(file_name, 'rsi_bbands_alt_has_ordered', False)
-                update_state_file(file_name, 'rsi_bbands_alt_sell_id', "")
-                update_state_file(file_name, 'rsi_bbands_alt_buy_id', "")
             with open(open_path, 'w') as file:
                 json.dump([order for order in existing_data if order['id'] != id], file, indent=2)
         if order_found:
@@ -300,6 +281,28 @@ def get_info():
         return jsonify(info), 200
     except Exception as e:
         return jsonify({"msg": str(e)}), 500
+    
+@app.route('/cancel_is_intervened/<string:symbol>')
+@jwt_required()
+def cancel_is_intervened(symbol):
+    file_name = symbol.lower()
+    update_file_path = f'{app.config["UPDATE_PATH"]}/{file_name}_update.json'
+    with open(update_file_path, 'w') as update_file:
+        json.dump({'should_update': True, 'is_intervened': False }, update_file, indent=2)
+    return jsonify({"msg": "Is intervened cancelled"}), 200
+
+@app.route('/list_intervened')
+@jwt_required()
+def list_intervened():
+    files = os.listdir(app.config["UPDATE_PATH"])
+    intervened_dict = {}
+    for file in files:
+        if file.endswith('_update.json'):
+            symbol = file.replace('_update.json', '')
+            with open(f'{app.config["UPDATE_PATH"]}/{file}', 'r') as update_file:
+                data = json.load(update_file)
+                intervened_dict[symbol] = data.get('is_intervened', False)
+    return jsonify(intervened_dict), 200
 
 @app.route('/trades/<string:symbol>')
 @jwt_required()

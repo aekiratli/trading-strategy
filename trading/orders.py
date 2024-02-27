@@ -7,6 +7,9 @@ import asyncio
 import uuid
 from utils import *
 from binance.client import AsyncClient
+from logger import Logger
+import logging
+import math
 
 load_dotenv()
 
@@ -14,7 +17,7 @@ ORDER_PATH = os.getenv("ORDER_PATH")
 STATE_PATH = os.getenv("STATE_PATH")
 
 class Orders:
-    def __init__(self, parity: str, client: AsyncClient, logger):
+    def __init__(self, parity: str, client: AsyncClient, logger: Logger):
         self.parity = parity
         self.client = client
         self.main_path = f'{ORDER_PATH}'
@@ -22,6 +25,7 @@ class Orders:
         self.cancelled_path = f'{ORDER_PATH}/cancelled.json'
         self.open_path = f'{ORDER_PATH}/open.json'
         self.state_path = f'{STATE_PATH}'
+        self.logger = logger
 
         if not os.path.exists(ORDER_PATH):
             os.mkdir(ORDER_PATH)
@@ -38,7 +42,7 @@ class Orders:
             with open(self.open_path, 'w') as file:
                 json.dump([], file, indent=2)
 
-    async def create_order(self, amount, price, action, strategy, market_type, id):
+    async def create_order(self, amount, price, action, strategy, market_type, id, is_simulation):
         # get ticksize and stepsize for the symbol
         resp = await self.client.get_symbol_info(self.parity["symbol"])
         tick_size = float(resp['filters'][0]['tickSize'])
@@ -46,9 +50,12 @@ class Orders:
         # round the price and amount to the ticksize and stepsize
         amount = round(amount / step_size) * step_size
         price = round(price / tick_size) * tick_size
+        # make sure amount and price is 4 decimal places
+        amount = round(amount, 4)
+        price = round(price, 4)
         # log the size and price
-        await logger.info(f"Amount: {amount}, Price: {price}, Symbol: {self.parity['symbol']}")
-        await logger.info(f"Tick Size: {tick_size}, Step Size: {step_size}")
+        logging.info(f"Amount: {amount}, Price: {price}, Symbol: {self.parity['symbol']}")
+        logging.info(f"Tick Size: {tick_size}, Step Size: {step_size}")
 
         
         order_data = {
@@ -62,24 +69,26 @@ class Orders:
             order_data['timeInForce'] = AsyncClient.TIME_IN_FORCE_GTC
             order_data['price'] = price
 
-        # add to active_trades
+        # usingg lock not always working when using gather
+        # wait randomly for 0.00 to 0.99 seconds
+        await asyncio.sleep(round(random.uniform(0.00, 4.99), 2))
         async with asyncio.Lock():
-            # usingg lock not always working when using gather
-            # wait randomly for 0.00 to 0.99 seconds
-            await asyncio.sleep(round(random.uniform(0.00, 0.99), 2))
+
             with open(f'{self.state_path}/active_trades.json', 'r') as file:
                 existing_data = json.load(file)
-                if len(existing_data) == 4:
-                    return
-                else:
-                    try:
+                try:
+                    if is_simulation or len(existing_data) == 4:
+                        await self.client.create_test_order(**order_data)
+                        order = {"orderId": "test_order_id"}
+                    else:
                         order = await self.client.create_order(**order_data)
-                        existing_data.append(f'{self.parity["symbol"]}{self.parity["interval"]}_{strategy}')
-                        with open(f'{self.state_path}/active_trades.json', 'w') as file:
-                            json.dump(existing_data, file, indent=2)
-                    except Exception as e:
-                        await telegram_bot_sendtext(f"*{self.parity['symbol']}-{self.parity['interval']} - Order creation failed.* due to the : {e}", True)
-                        raise e
+                        if action == "buy":
+                            existing_data.append(f'{self.parity["symbol"]}{self.parity["interval"]}_{strategy}')
+                            with open(f'{self.state_path}/active_trades.json', 'w') as file:
+                                json.dump(existing_data, file, indent=2)
+                except Exception as e:
+                    await telegram_bot_sendtext(f"*{self.parity['symbol']}-{self.parity['interval']} - Order creation failed.* due to the : {e}", True)
+                    raise e
 
 
         ts = int(datetime.now().timestamp())
@@ -94,7 +103,7 @@ class Orders:
             'action': action,
             'trade_id': 0,
             'strategy': strategy,
-            'orderId': order['orderId'],
+            'orderId': "test_order_id" if is_simulation else order['orderId'],
             'id': id
         }
 

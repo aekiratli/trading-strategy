@@ -1,5 +1,6 @@
 import React from 'react';
-import { Card, CardContent, Typography, Box, IconButton, Button } from '@mui/material';
+import { Card, CardContent, Typography, Box, IconButton, Button, Dialog, DialogActions, DialogTitle } from '@mui/material';
+import RestartAltIcon from '@mui/icons-material/RestartAlt';
 import Modal from '@mui/material/Modal';
 import Cookies from 'universal-cookie';
 import Table from '@mui/material/Table';
@@ -61,7 +62,9 @@ export default function TradingOverview({ parities }) {
   const [isCardClicked, setIsCardClicked] = React.useState(false);
   const [selectedParity, setSelectedParity] = React.useState({});
   const [summary, setSummary] = React.useState([]);
+  const [interventions, setInterventions] = React.useState({});
   const [selectedStrategy, setSelectedStrategy] = React.useState("null");
+  const [isInterveneModalOpen, setIsInterveneModalOpen] = React.useState(false);
 
   React.useEffect(() => {
     if (!parities) {
@@ -100,6 +103,22 @@ export default function TradingOverview({ parities }) {
         setSummary(data);
       }
     }
+    async function getInterventions() {
+      const token = new Cookies().get('token');
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/list_intervened`,
+      {
+          headers: {
+            'Authorization': `Bearer ${token}` // Use appropriate authentication scheme and token format
+            // If you're using a different type of authentication, adjust the header accordingly
+          }
+        });
+      const data = await response.json();
+      const code = response.status;
+      if (code === 200) {
+        setInterventions(data);
+      }
+    }
+    getInterventions();
     getSummary();
   }, []);
 
@@ -168,6 +187,14 @@ export default function TradingOverview({ parities }) {
     }
   }
 
+  const checkIfIntervened = (parity) => {
+    const parityName = (parity.symbol + parity.interval).toLowerCase();
+    if (interventions && interventions[parityName]) {
+      return true;
+    }
+    return false;
+  }
+
   const handleSummary =  (parity, strategy) => {
     const parityName = parity.symbol + parity.interval;
         // Check if the summaryData is not null or undefined
@@ -183,6 +210,30 @@ export default function TradingOverview({ parities }) {
       }
   }
 
+  const handleOpenIntervene = async (parity) => {
+    setIsInterveneModalOpen(true);
+    setSelectedParity(parity);
+  }
+
+  const handleIntervene = async (parity) => {
+    const token = new Cookies().get('token');
+    const parityName = (parity.symbol + parity.interval).toLowerCase();
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/cancel_is_intervened/${parityName}`,
+      {
+        headers: {
+          'Authorization': `Bearer ${token}`, // Use appropriate authentication scheme and token format
+          // If you're using a different type of authentication, adjust the header accordingly
+        },
+      });
+    const data = await response.json();
+    const code = response.status;
+    if (code === 200) {
+      const newInterventions = JSON.parse(JSON.stringify(interventions));
+      delete newInterventions[parityName.toLowerCase()];
+      setInterventions(newInterventions);
+    }
+  }
+
   return (
     <Box style={{ backgroundColor: 'black' }}>
       <Box display="flex" flexWrap="wrap">
@@ -192,11 +243,12 @@ export default function TradingOverview({ parities }) {
             style={{
               margin: '10px',
               width: '300px',
+              color: checkIfIntervened(parity) && 'red',
             }}
           >
             <CardContent>
               <Typography variant="h5" component="div">
-                {parity.symbol} - {parity.interval}
+                {parity.symbol} - {parity.interval} {checkIfIntervened(parity) && <IconButton onClick={()=>{handleOpenIntervene(parity)}}><RestartAltIcon /></IconButton>}
               </Typography>
               <Typography variant="body2">
                 {STRATEGIES.map((strategy) => (
@@ -277,6 +329,18 @@ export default function TradingOverview({ parities }) {
           )}
         </Box>
       </Modal>
+        <Dialog open={isInterveneModalOpen} onClose={() => setIsInterveneModalOpen(false)} fullWidth maxWidth="md">
+          <DialogTitle>
+            Remove intervene in {selectedParity.symbol} - {selectedParity.interval} . CHECK "active_trades.json" FROM PYTHONANYHWERE ! CONTACT ADMIN !
+          </DialogTitle>
+          <DialogActions>
+            <Button onClick={() => setIsInterveneModalOpen(false)}>Cancel</Button>
+            <Button onClick={() => {
+              handleIntervene(selectedParity);
+              setIsInterveneModalOpen(false);
+            }}>Intervene</Button>
+          </DialogActions>
+        </Dialog>
     </Box>
   );
 }

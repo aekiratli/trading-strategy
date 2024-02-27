@@ -68,7 +68,7 @@ async def main(df, parity, task_id, file_name, state, rsi_states, active_trades)
         while True:
             res = await tscm.recv()
 
-            upd = should_update_parity(file_name)
+            upd, is_intervened = should_update_parity(file_name)
             if upd:
                 state = read_state_file(file_name)
                 update_update_file(file_name, False)
@@ -217,38 +217,38 @@ async def main(df, parity, task_id, file_name, state, rsi_states, active_trades)
             rsi_value = rsi.iloc[-1]
             lowerband = lowerband.iloc[-1]
             zone = pmax_df.iloc[-1,-1]
-            if len(active_trades) <= 4:
-                if not active_trades:
-                    tasks = [
-                        pmax_bbands(parity, state, file_name, logger, zone, lowerband, pmax, close, orders, client),
-                        rsi_bbands(parity, state, file_name, logger, lowerband, rsi_value, close, orders, client),
-                        rsi_bbands_alt(parity, state, file_name, logger, lowerband, rsi_value, close, orders, client),
-                        rsi_trading(parity, state, file_name, logger, rsi_value, close, orders, client),
-                        rsi_trading_alt(parity, state, file_name, logger, rsi_value, close, orders, client)
-                    ]
-                    results = await asyncio.gather(*tasks)
-                    # Update state based on results
-                    for result in results:
-                        if result is not None:
-                            state.update(result)
-                else:
-                    tasks = []
-                    for trade in active_trades:
-                        if trade == parity['symbol'] + parity['interval'] + "_pmax_bbands":
-                            tasks.append(pmax_bbands(parity, state, file_name, logger, zone, lowerband, pmax, close, orders, client))
-                        if trade == parity['symbol'] + parity['interval'] + "_rsi_bbands":
-                            tasks.append(rsi_bbands(parity, state, file_name, logger, lowerband, rsi_value, close, orders, client))
-                        if trade == parity['symbol'] + parity['interval'] + "_rsi_bbands_alt":
-                            tasks.append(rsi_bbands_alt(parity, state, file_name, logger, lowerband, rsi_value, close, orders, client))
-                        if trade == parity['symbol'] + parity['interval'] + "_rsi_trading":
-                            tasks.append(rsi_trading(parity, state, file_name, logger, rsi_value, close, orders, client))
-                        if trade == parity['symbol'] + parity['interval'] + "_rsi_trading_alt":
-                            tasks.append(rsi_trading_alt(parity, state, file_name, logger, rsi_value, close, orders, client))
-                    results = await asyncio.gather(*tasks)
-                    # Update state based on results
-                    for result in results:
-                        if result is not None:
-                            state.update(result)
+            if not is_intervened:
+                tasks = [
+                    pmax_bbands(parity, state, file_name, logger, zone, lowerband, pmax, close, orders, client),
+                    rsi_bbands(parity, state, file_name, logger, lowerband, rsi_value, close, orders, client),
+                    rsi_bbands_alt(parity, state, file_name, logger, lowerband, rsi_value, close, orders, client),
+                    rsi_trading(parity, state, file_name, logger, rsi_value, close, orders, client),
+                    rsi_trading_alt(parity, state, file_name, logger, rsi_value, close, orders, client)
+                ]
+                results = await asyncio.gather(*tasks)
+                # Update state based on results
+                for result in results:
+                    if result is not None:
+                        state.update(result)
+                # else:
+                #     tasks = []
+                #     for trade in active_trades:
+                #         if not is_intervened:
+                #             if trade == parity['symbol'] + parity['interval'] + "_pmax_bbands":
+                #                 tasks.append(pmax_bbands(parity, state, file_name, logger, zone, lowerband, pmax, close, orders, client))
+                #             if trade == parity['symbol'] + parity['interval'] + "_rsi_bbands":
+                #                 tasks.append(rsi_bbands(parity, state, file_name, logger, lowerband, rsi_value, close, orders, client))
+                #             if trade == parity['symbol'] + parity['interval'] + "_rsi_bbands_alt":
+                #                 tasks.append(rsi_bbands_alt(parity, state, file_name, logger, lowerband, rsi_value, close, orders, client))
+                #             if trade == parity['symbol'] + parity['interval'] + "_rsi_trading":
+                #                 tasks.append(rsi_trading(parity, state, file_name, logger, rsi_value, close, orders, client))
+                #             if trade == parity['symbol'] + parity['interval'] + "_rsi_trading_alt":
+                #                 tasks.append(rsi_trading_alt(parity, state, file_name, logger, rsi_value, close, orders, client))
+                #         results = await asyncio.gather(*tasks)
+                #         # Update state based on results
+                #         for result in results:
+                #             if result is not None:
+                #                 state.update(result)
 
 
 
