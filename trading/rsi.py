@@ -1,17 +1,28 @@
-# from utils import get_amount_to_buy, telegram_bot_sendtext, update_state_file
-from utils import get_amount_to_buy, telegram_bot_sendtext, update_state_file, initialize_parities, initialize_state_files, read_state_file, update_state_file_and_state
+from utils import get_amount_to_buy, telegram_bot_sendtext, initialize_parities, initialize_state_files, read_state_file, update_state_file_and_state
 import logging
 from logger import Logger
 import asyncio
 from trading.orders import Orders
 import uuid
 from binance.client import AsyncClient
+from dotenv import load_dotenv
+import os
+import asyncio
+import json
 
+load_dotenv()
+STATE_PATH = os.getenv("STATE_PATH")
 
 async def rsi_trading(parity, state, file_name, logger, rsi_value, close, orders: Orders, client: AsyncClient):
 
     is_simulation = parity["rsi_trading_sim"]
-        
+    with open(f"{STATE_PATH}/active_trades.json", "r") as file:
+        active_trades = json.load(file)
+    if len(active_trades) == 4 and not is_simulation:
+        # check if symbol+interval+_+strategy in active_trades
+        if not f"{parity['symbol']}{parity['interval']}_rsi_trading" in active_trades:
+            is_simulation = True
+            
 
     if parity["rsi_trading"] == True and parity["rsi"] == True:
 
@@ -73,7 +84,13 @@ async def rsi_trading(parity, state, file_name, logger, rsi_value, close, orders
 async def rsi_trading_alt(parity, state, file_name, logger, rsi_value, close, orders: Orders, client: AsyncClient):
 
     is_simulation = parity["rsi_trading_alt_sim"]
-    
+    with open(f"{STATE_PATH}/active_trades.json", "r") as file:
+        active_trades = json.load(file)
+    if len(active_trades) == 4 and not is_simulation:
+        # check if symbol+interval+_+strategy in active_trades
+        if not f"{parity['symbol']}{parity['interval']}_rsi_trading_alt" in active_trades:
+            is_simulation = True
+
     if parity["rsi_trading_alt"] == True and parity["rsi"] == True:
 
         if rsi_value <= parity["rsi_trading_alt_buy_limit"] and state["rsi_trading_alt_bought"] == False:

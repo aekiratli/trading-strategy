@@ -1,16 +1,27 @@
-# from utils import get_amount_to_buy, telegram_bot_sendtext, update_state_file
-from utils import get_amount_to_buy, telegram_bot_sendtext, update_state_file, initialize_parities, initialize_state_files, read_state_file, update_state_file_and_state
+from utils import telegram_bot_sendtext, update_state_file, initialize_parities, initialize_state_files, read_state_file, update_state_file_and_state
 import logging
 from logger import Logger
 import asyncio
 import uuid
 from trading.orders import Orders
 from binance.client import AsyncClient
+from dotenv import load_dotenv
+import os
+import asyncio
+import json
 
+load_dotenv()
+STATE_PATH = os.getenv("STATE_PATH")
 
 async def pmax_bbands(parity, state, file_name, logger, zone, lowerband, pmax, close, orders: Orders, client: AsyncClient) -> dict:
 
     is_simulation = parity["pmax_bbands_sim"]
+    with open(f"{STATE_PATH}/active_trades.json", "r") as file:
+        active_trades = json.load(file)
+    if len(active_trades) == 4 and not is_simulation:
+        # check if symbol+interval+_+strategy in active_trades
+        if not f"{parity['symbol']}{parity['interval']}_pmax_bbands" in active_trades:
+            is_simulation = True
 
     if parity["pmax_bbands"] == True and parity["pmax"] == True and parity["bbands"] == True:
 

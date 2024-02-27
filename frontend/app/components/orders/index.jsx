@@ -62,7 +62,9 @@ export default function Orders({ parities }) {
       const data = await response.json();
       setSelectedPrice(data.price);
     }
-    getPrice();
+    if (selectedSymbol) {
+      getPrice();
+    }
   }, [selectedSymbol, assets]);
 
   React.useEffect(() => {
@@ -227,14 +229,14 @@ export default function Orders({ parities }) {
           <TableBody>
             {orders.slice((page - 1) * 5, page * 5).map((order) => (
               <TableRow key={order.id}>
-                <TableCell>{order.id}</TableCell>
+                <TableCell>{order.orderId}</TableCell>
                 <TableCell>{timestampToReadableDate(order.timestamp)}</TableCell>
                 <TableCell>{order.action}</TableCell>
                 <TableCell>{order.price}</TableCell>
                 <TableCell>{order.amount}</TableCell>
                 <TableCell>{order.strategy}</TableCell>
                 <TableCell>{order.symbol} - {order.interval} </TableCell>
-                {activeButton === 'Open' && (
+                {activeButton === 'Open' && order.OrderId !== 'test_order_id' &&(
                   <TableCell>
                     <Button onClick={() => openCancelDialog(order.id)}>Cancel</Button>
                   </TableCell>

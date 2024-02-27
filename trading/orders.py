@@ -9,7 +9,6 @@ from utils import *
 from binance.client import AsyncClient
 from logger import Logger
 import logging
-import math
 
 load_dotenv()
 

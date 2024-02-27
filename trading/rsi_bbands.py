@@ -5,11 +5,24 @@ import asyncio
 from trading.orders import Orders
 import uuid
 from binance.client import AsyncClient
+from dotenv import load_dotenv
+import os
+import asyncio
+import json
+
+load_dotenv()
+STATE_PATH = os.getenv("STATE_PATH")
 
 async def rsi_bbands_alt(parity, state, file_name, logger, lowerband, rsi_value, close, orders: Orders, client: AsyncClient) -> dict:
 
     is_simulation = parity["rsi_bbands_alt_sim"]
-
+    with open(f"{STATE_PATH}/active_trades.json", "r") as file:
+        active_trades = json.load(file)
+    if len(active_trades) == 4 and not is_simulation:
+        # check if symbol+interval+_+strategy in active_trades
+        if not f"{parity['symbol']}{parity['interval']}_rsi_bbands_alt" in active_trades:
+            is_simulation = True
+            
     if parity["rsi_bbands_alt"] == True and parity["rsi"] == True and parity["bbands"] == True:
 
         if rsi_value <= parity["rsi_bbands_alt_buy_limit"] and close > lowerband and state["rsi_bbands_alt_has_ordered"] == False:
@@ -109,7 +122,13 @@ async def rsi_bbands_alt(parity, state, file_name, logger, lowerband, rsi_value,
 async def rsi_bbands(parity, state, file_name, logger, lowerband, rsi_value, close, orders: Orders, client: AsyncClient) -> dict:
     
     is_simulation = parity["rsi_bbands_sim"]
-        
+    with open(f"{STATE_PATH}/active_trades.json", "r") as file:
+        active_trades = json.load(file)
+    if len(active_trades) == 4 and not is_simulation:
+        # check if symbol+interval+_+strategy in active_trades
+        if not f"{parity['symbol']}{parity['interval']}_rsi_bbands" in active_trades:
+            is_simulation = True
+            
     if parity["rsi_bbands"] == True and parity["rsi"] == True and parity["bbands"] == True:
         if rsi_value <= parity["rsi_bbands_buy_limit"] and close > lowerband and state["rsi_bbands_has_ordered"] == False:
             buy, sell = parity["rsi_bbands_percentages"][0], parity["rsi_bbands_percentages"][1]
