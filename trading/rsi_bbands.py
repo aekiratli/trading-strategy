@@ -37,9 +37,9 @@ async def rsi_bbands_alt(parity, state, file_name, logger, lowerband, rsi_value,
             # calculate the amount to buy
             amount_to_buy = quota / float(buy_price)
             # use decimal  of 4
-            amount = round(amount_to_buy, 4)
-            orderId = await orders.create_order(amount, buy_price, "buy", 'rsi_bbands_alt', 'limit', buy_id,is_simulation)
+            amount = round(amount_to_buy, 4)       
             buy_id = str(uuid.uuid4())
+            orderId = await orders.create_order(amount, buy_price, "buy", 'rsi_bbands_alt', 'limit', buy_id,is_simulation)
             state = update_state_file_and_state(file_name, 'rsi_bbands_alt_buy_id', state, buy_id)
             # orderId state update
             state = update_state_file_and_state(file_name, 'rsi_bbands_alt_buy_orderId', state, orderId)
