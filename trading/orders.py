@@ -76,7 +76,7 @@ class Orders:
             with open(f'{self.state_path}/active_trades.json', 'r') as file:
                 existing_data = json.load(file)
                 try:
-                    if is_simulation or len(existing_data) == 4:
+                    if is_simulation:
                         await self.client.create_test_order(**order_data)
                         order = {"orderId": "test_order_id"}
                     else:
@@ -174,10 +174,10 @@ class Orders:
                     # remove from active_trades
                     if order["action"] == "sell":
                         with open(f'{self.state_path}/active_trades.json', 'r') as file:
-                            existing_data = json.load(file)
-                            existing_data.remove(f'{self.parity["symbol"]}{self.parity["interval"]}_{order["strategy"]}')
+                            active_trades = json.load(file)
+                            active_trades.remove(f'{self.parity["symbol"]}{self.parity["interval"]}_{order["strategy"]}')
                             with open(f'{self.state_path}/active_trades.json', 'w') as file:
-                                json.dump(existing_data, file, indent=2)
+                                json.dump(active_trades, file, indent=2)
 
                     with open(completed_path, 'r') as file:
                         completed_data = json.load(file)
