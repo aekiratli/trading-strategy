@@ -98,18 +98,18 @@ async def rsi_trading_alt(parity, state, file_name, logger, rsi_value, close, or
 
             logging.info(
                 f"buying for rsi_trading_alt -> rsi_value -> {rsi_value}, symbol -> {parity['symbol']}, interval -> {parity['interval']}, close -> {close}")
-            quota = parity['rsi_trading_quota']
+            quota = parity['rsi_trading_alt_quota']
             amount = get_amount_to_buy(quota, parity['symbol'])
 
             buy_id = str(uuid.uuid4())
-            await orders.create_order(amount, close, "buy", 'rsi_trading', 'market', buy_id, is_simulation)
+            await orders.create_order(amount, close, "buy", 'rsi_trading_alt', 'market', buy_id, is_simulation)
             await orders.complete_order(buy_id)
             await asyncio.sleep(5)
 
             sell_id = str(uuid.uuid4())
-            sell_price = state["rsi_trading_buy_price"] * parity["rsi_trading_sell_percentage"]
+            sell_price = state["rsi_trading_alt_buy_price"] * parity["rsi_trading_alt_sell_percentage"]
 
-            orderId = await orders.create_order(amount, sell_price, "sell", 'rsi_trading', 'limit', sell_id, is_simulation)
+            orderId = await orders.create_order(amount, sell_price, "sell", 'rsi_trading_alt', 'limit', sell_id, is_simulation)
             state = update_state_file_and_state(file_name, 'rsi_trading_alt_sell_orderId', state, orderId)
             state = update_state_file_and_state(file_name, 'rsi_trading_alt_sell_id', state, sell_id)
             await logger.save({"zone": "buy", "price": close, "amount": amount, "quota": quota,  "strategy": "rsi_trading_alt"})

@@ -86,7 +86,7 @@ class Orders:
                             with open(f'{self.state_path}/active_trades.json', 'w') as file:
                                 json.dump(existing_data, file, indent=2)
                 except Exception as e:
-                    await telegram_bot_sendtext(f"*{self.parity['symbol']}-{self.parity['interval']} - Order creation failed.* due to the : {e}", True)
+                    await telegram_bot_sendtext(f"*{self.parity['symbol']}-{self.parity['interval']-{strategy}} - Order creation failed.* due to the : {e}", True)
                     raise e
 
 
