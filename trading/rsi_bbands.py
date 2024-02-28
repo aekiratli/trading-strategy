@@ -59,7 +59,7 @@ async def rsi_bbands_alt(parity, state, file_name, logger, lowerband, rsi_value,
                     is_order_fullfilled = True
                 else:
                     orderId = state["rsi_bbands_alt_buy_orderId"]
-                    order = await client.get_order(parity['symbol'], orderId)
+                    order = await client.get_order(symbol=parity['symbol'], orderId=orderId)
                     if order["status"] == "FILLED":
                         is_order_fullfilled = True
                         state = update_state_file_and_state(file_name, 'rsi_bbands_alt_buy_orderId', state, "")
@@ -93,7 +93,7 @@ async def rsi_bbands_alt(parity, state, file_name, logger, lowerband, rsi_value,
                     is_order_fullfilled = True
                 else:
                     orderId = state["rsi_bbands_alt_sell_orderId"]
-                    order = await client.get_order(parity['symbol'], orderId)
+                    order = await client.get_order(symbol=parity['symbol'], orderId=orderId)
                     if order["status"] == "FILLED":
                         is_order_fullfilled = True
                         state = update_state_file_and_state(file_name, 'rsi_bbands_alt_sell_orderId', state, "")
@@ -166,7 +166,7 @@ async def rsi_bbands(parity, state, file_name, logger, lowerband, rsi_value, clo
                     is_order_fullfilled = True
                 else:
                     orderId = state["rsi_bbands_buy_orderId"]
-                    order = await client.get_order(parity['symbol'], orderId)
+                    order = await client.get_order(symbol=parity['symbol'], orderId=orderId)
                     if order["status"] == "FILLED":
                         is_order_fullfilled = True
                         state = update_state_file_and_state(file_name, 'rsi_bbands_buy_orderId', state, "")
@@ -201,7 +201,7 @@ async def rsi_bbands(parity, state, file_name, logger, lowerband, rsi_value, clo
                     is_order_fullfilled = True
                 else:
                     orderId = state["rsi_bbands_sell_orderId"]
-                    order = await client.get_order(parity['symbol'], orderId)
+                    order = await client.get_order(symbol=parity['symbol'], orderId=orderId)
                     if order["status"] == "FILLED":
                         is_order_fullfilled = True
                         state = update_state_file_and_state(file_name, 'rsi_bbands_sell_orderId', state, "")
