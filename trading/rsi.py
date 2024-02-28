@@ -39,7 +39,8 @@ async def rsi_trading(parity, state, file_name, logger, rsi_value, close, orders
             await logger.save({"zone": "buy", "price": close, "amount": amount, "quota": quota,  "strategy": "rsi_trading"})
             
             sell_id = str(uuid.uuid4())
-            orderId = await orders.create_order(amount, close, "sell", 'rsi_trading', 'limit', sell_id, is_simulation)
+            sell_price = state["rsi_trading_buy_price"] * parity["rsi_trading_sell_percentage"]
+            orderId = await orders.create_order(amount, sell_price, "sell", 'rsi_trading', 'limit', sell_id, is_simulation)
             state = update_state_file_and_state(file_name, 'rsi_trading_sell_orderId', state, orderId)
             state = update_state_file_and_state(file_name, 'rsi_trading_sell_id', state, sell_id)
 
@@ -106,7 +107,9 @@ async def rsi_trading_alt(parity, state, file_name, logger, rsi_value, close, or
             await asyncio.sleep(5)
 
             sell_id = str(uuid.uuid4())
-            orderId = await orders.create_order(amount, close, "sell", 'rsi_trading', 'limit', sell_id, is_simulation)
+            sell_price = state["rsi_trading_buy_price"] * parity["rsi_trading_sell_percentage"]
+
+            orderId = await orders.create_order(amount, sell_price, "sell", 'rsi_trading', 'limit', sell_id, is_simulation)
             state = update_state_file_and_state(file_name, 'rsi_trading_alt_sell_orderId', state, orderId)
             state = update_state_file_and_state(file_name, 'rsi_trading_alt_sell_id', state, sell_id)
             await logger.save({"zone": "buy", "price": close, "amount": amount, "quota": quota,  "strategy": "rsi_trading_alt"})

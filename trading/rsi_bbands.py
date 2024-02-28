@@ -73,7 +73,7 @@ async def rsi_bbands_alt(parity, state, file_name, logger, lowerband, rsi_value,
                 amount = state["rsi_bbands_alt_bought_amount"]
                 sell_price = state["rsi_bbands_alt_sell_price"]
                 sell_id = str(uuid.uuid4())
-                orderId = await orders.create_order(amount, close, "sell", 'rsi_bbands_alt', 'limit', sell_id,is_simulation)
+                orderId = await orders.create_order(amount, sell_price, "sell", 'rsi_bbands_alt', 'limit', sell_id,is_simulation)
                 state = update_state_file_and_state(file_name, 'rsi_bbands_alt_sell_id', state, sell_id)
                 state = update_state_file_and_state(file_name, 'rsi_bbands_alt_sell_orderId', state, orderId)
                 await orders.complete_order(state["rsi_bbands_alt_buy_id"])
@@ -181,7 +181,7 @@ async def rsi_bbands(parity, state, file_name, logger, lowerband, rsi_value, clo
                 sell_price = state["rsi_bbands_sell_price"]
                 sell_id = str(uuid.uuid4())
 
-                orderId = await orders.create_order(amount, close, "sell", 'rsi_bbands', 'limit', sell_id,is_simulation)
+                orderId = await orders.create_order(amount, sell_price, "sell", 'rsi_bbands', 'limit', sell_id,is_simulation)
                 state = update_state_file_and_state(file_name, 'rsi_bbands_sell_orderId', state, orderId)
 
                 await orders.complete_order(state["rsi_bbands_buy_id"])

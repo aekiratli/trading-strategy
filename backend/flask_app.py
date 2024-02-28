@@ -246,6 +246,12 @@ def cancel_order(id):
             with open(cancelled_path, 'w') as file:
                 cancelled_data.append(order)
                 json.dump(cancelled_data, file, indent=2)
+            # active_trades.json
+            with open(f'{app.config["STATE_PATH"]}/active_trades.json', 'r') as file:
+                active_trades = json.load(file)
+                active_trades.remove(f'{order["symbol"]}{order["interval"]}_{order["strategy"]}')
+            with open(f'{app.config["STATE_PATH"]}/active_trades.json', 'w') as file:
+                json.dump(active_trades, file, indent=2)
 
             file_name = order['symbol'] + order['interval']
             # lowercasing

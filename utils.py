@@ -132,10 +132,10 @@ def should_update_parity(file_name):
         data = json.load(update_file)
         return data['should_update'], data['is_intervened']
     
-def update_update_file(file_name, should_update):
+def update_update_file(file_name, should_update, is_intervened):
     update_file_path = f'{UPDATE_PATH}/{file_name}_update.json'
     with open(update_file_path, 'w') as update_file:
-        json.dump({'should_update':should_update }, update_file, indent=2)
+        json.dump({'should_update':should_update, 'is_intervened': is_intervened }, update_file, indent=2)
 
 def read_state_file(file_name) -> dict:
     state_file_path = f'{STATE_PATH}/{file_name}_state.json'

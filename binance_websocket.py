@@ -24,7 +24,7 @@ BINANCE_API_KEY = os.getenv("BINANCE_API_KEY")
 BINANCE_API_SECRET = os.getenv("BINANCE_API_SECRET")
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-async def main(df, parity, task_id, file_name, state, rsi_states, active_trades):
+async def main(df, parity, file_name, state, rsi_states):
 
     is_first_run = True
     pmax_candle_counter = state['pmax_candle_counter']
@@ -71,7 +71,7 @@ async def main(df, parity, task_id, file_name, state, rsi_states, active_trades)
             upd, is_intervened = should_update_parity(file_name)
             if upd:
                 state = read_state_file(file_name)
-                update_update_file(file_name, False)
+                update_update_file(file_name, False, is_intervened)
 
             if res['k']['x']:
                 # candle is closed, concat new candle to df
@@ -230,33 +230,12 @@ async def main(df, parity, task_id, file_name, state, rsi_states, active_trades)
                 for result in results:
                     if result is not None:
                         state.update(result)
-                # else:
-                #     tasks = []
-                #     for trade in active_trades:
-                #         if not is_intervened:
-                #             if trade == parity['symbol'] + parity['interval'] + "_pmax_bbands":
-                #                 tasks.append(pmax_bbands(parity, state, file_name, logger, zone, lowerband, pmax, close, orders, client))
-                #             if trade == parity['symbol'] + parity['interval'] + "_rsi_bbands":
-                #                 tasks.append(rsi_bbands(parity, state, file_name, logger, lowerband, rsi_value, close, orders, client))
-                #             if trade == parity['symbol'] + parity['interval'] + "_rsi_bbands_alt":
-                #                 tasks.append(rsi_bbands_alt(parity, state, file_name, logger, lowerband, rsi_value, close, orders, client))
-                #             if trade == parity['symbol'] + parity['interval'] + "_rsi_trading":
-                #                 tasks.append(rsi_trading(parity, state, file_name, logger, rsi_value, close, orders, client))
-                #             if trade == parity['symbol'] + parity['interval'] + "_rsi_trading_alt":
-                #                 tasks.append(rsi_trading_alt(parity, state, file_name, logger, rsi_value, close, orders, client))
-                #         results = await asyncio.gather(*tasks)
-                #         # Update state based on results
-                #         for result in results:
-                #             if result is not None:
-                #                 state.update(result)
-
-
 
 async def run_parities():
 
     # create tasks for each parity
     parities, file_names = initialize_parities()
-    active_trades = initialize_state_files(file_names)
+    initialize_state_files(file_names)
     initialize_update_files(file_names)
     tasks = []
     task_id = 0
@@ -265,7 +244,7 @@ async def run_parities():
             rsi_states = calculate_rsi_states(parity)
             state = read_state_file(file_names[task_id])
             df = get_candles(parity['symbol'], parity['interval'], parity['start'])
-            tasks.append(main(df, parity, task_id, file_names[task_id], state,rsi_states, active_trades))        
+            tasks.append(main(df, parity, file_names[task_id], state,rsi_states))        
         task_id += 1
     send_text = 'https://api.telegram.org/bot' + TELEGRAM_KEY + '/sendMessage?chat_id=' + CHAT_ID + '&parse_mode=Markdown&text=' + "Bot is running"
     async with aiohttp.ClientSession() as session:
