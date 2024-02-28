@@ -71,7 +71,6 @@ async def pmax_bbands(parity, state, file_name, logger, zone, lowerband, pmax, c
                     order = await client.get_order(symbol=parity['symbol'], orderId=orderId)
                     if order["status"] == "FILLED":
                         is_order_fullfilled = True
-                        state = update_state_file_and_state(file_name, 'pmax_bbands_buy_orderId', state, "")
                     else:
                         await asyncio.sleep(10)
                         return state
@@ -90,6 +89,7 @@ async def pmax_bbands(parity, state, file_name, logger, zone, lowerband, pmax, c
                 state = update_state_file_and_state(file_name, 'pmax_bbands_sell_orderId', state, orderId)
                 state = update_state_file_and_state(file_name, 'pmax_bbands_sell_id', state, sell_id)
                 await asyncio.sleep(1)
+                state = update_state_file_and_state(file_name, 'pmax_bbands_buy_orderId', state, "")
 
         if close >= state["pmax_bbands_sell_price"] and state["pmax_bbands_bought"] == True:
             is_order_fullfilled = False
@@ -101,7 +101,6 @@ async def pmax_bbands(parity, state, file_name, logger, zone, lowerband, pmax, c
                     order = await client.get_order(symbol=parity['symbol'], orderId=orderId)
                     if order["status"] == "FILLED":
                         is_order_fullfilled = True
-                        state = update_state_file_and_state(file_name, 'pmax_bbands_sell_orderId', state, "")
                     else:
                         await asyncio.sleep(10)
                     return state
@@ -128,6 +127,7 @@ async def pmax_bbands(parity, state, file_name, logger, zone, lowerband, pmax, c
                     file_name, 'pmax_bbands_has_ordered', state, False)
                 state = update_state_file_and_state(
                     file_name, 'pmax_bbands_sell_id', state, "")
+                state = update_state_file_and_state(file_name, 'pmax_bbands_sell_orderId', state, "")
 
 
 
