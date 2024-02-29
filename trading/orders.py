@@ -171,14 +171,19 @@ class Orders:
 
             for order in existing_data:
                 if order['id'] == id:
-                    # remove from active_trades
                     if order["action"] == "sell":
+
                         with open(f'{self.state_path}/active_trades.json', 'r') as file:
                             active_trades = json.load(file)
-                            active_trades.remove(f'{self.parity["symbol"]}{self.parity["interval"]}_{order["strategy"]}')
-                            with open(f'{self.state_path}/active_trades.json', 'w') as file:
-                                json.dump(active_trades, file, indent=2)
-
+                            try:
+                                active_trades.remove(f'{self.parity["symbol"]}{self.parity["interval"]}_{order["strategy"]}')
+                                with open(f'{self.state_path}/active_trades.json', 'w') as file:
+                                    json.dump(active_trades, file, indent=2)
+                            except ValueError:
+                                pass
+                            except Exception as e:
+                                raise e
+                            
                     with open(completed_path, 'r') as file:
                         completed_data = json.load(file)
                     with open(completed_path, 'w') as file:
