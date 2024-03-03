@@ -18,16 +18,21 @@ async def rsi_bbands_alt(parity, state, file_name, logger, lowerband, rsi_value,
     is_simulation = parity["rsi_bbands_alt_sim"]
     with open(f"{STATE_PATH}/active_trades.json", "r") as file:
         active_trades = json.load(file)
-    if len(active_trades) == 4 and not is_simulation:
-        # check if symbol+interval+_+strategy in active_trades
-        if not f"{parity['symbol']}{parity['interval']}_rsi_bbands_alt" in active_trades:
+    try:
+        if len(active_trades) == 4 and not is_simulation:
+            # check if symbol+interval+_+strategy in active_trades
+            if not f"{parity['symbol']}{parity['interval']}_rsi_bbands_alt" in active_trades:
+                is_simulation = True
+        elif state["rsi_bbands_alt_buy_orderId"] == "test_order_id":
             is_simulation = True
-    elif state["rsi_bbands_alt_buy_orderId"] == "test_order_id":
-        is_simulation = True
-    elif state["rsi_bbands_alt_sell_orderId"] == "test_order_id":
-        is_simulation = True
-    else:
+        elif state["rsi_bbands_alt_sell_orderId"] == "test_order_id":
+            is_simulation = True
+        else:
+            is_simulation = False
+    except KeyError:
         is_simulation = False
+    except Exception as e:
+        raise e
 
     if parity["rsi_bbands_alt"] == True and parity["rsi"] == True and parity["bbands"] == True:
 
@@ -130,17 +135,22 @@ async def rsi_bbands(parity, state, file_name, logger, lowerband, rsi_value, clo
     is_simulation = parity["rsi_bbands_sim"]
     with open(f"{STATE_PATH}/active_trades.json", "r") as file:
         active_trades = json.load(file)
-    if len(active_trades) == 4 and not is_simulation:
-        # check if symbol+interval+_+strategy in active_trades
-        if not f"{parity['symbol']}{parity['interval']}_rsi_bbands" in active_trades:
+    try:
+        if len(active_trades) == 4 and not is_simulation:
+            # check if symbol+interval+_+strategy in active_trades
+            if not f"{parity['symbol']}{parity['interval']}_rsi_bbands" in active_trades:
+                is_simulation = True
+        elif state["rsi_bbands_buy_orderId"] == "test_order_id":
             is_simulation = True
-    elif state["rsi_bbands_buy_orderId"] == "test_order_id":
-        is_simulation = True
-    elif state["rsi_bbands_sell_orderId"] == "test_order_id":
-        is_simulation = True
-    else:
+        elif state["rsi_bbands_sell_orderId"] == "test_order_id":
+            is_simulation = True
+        else:
+            is_simulation = False
+    except KeyError:
         is_simulation = False
-
+    except Exception as e:
+        raise e
+    
     if parity["rsi_bbands"] == True and parity["rsi"] == True and parity["bbands"] == True:
         if rsi_value <= parity["rsi_bbands_buy_limit"] and close > lowerband and state["rsi_bbands_has_ordered"] == False:
             buy, sell = parity["rsi_bbands_percentages"][0], parity["rsi_bbands_percentages"][1]

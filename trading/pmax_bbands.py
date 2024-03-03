@@ -18,17 +18,22 @@ async def pmax_bbands(parity, state, file_name, logger, zone, lowerband, pmax, c
     is_simulation = parity["pmax_bbands_sim"]
     with open(f"{STATE_PATH}/active_trades.json", "r") as file:
         active_trades = json.load(file)
-    if len(active_trades) == 4 and not is_simulation:
-        # check if symbol+interval+_+strategy in active_trades
-        if not f"{parity['symbol']}{parity['interval']}_pmax_bbands" in active_trades:
+    try:
+        if len(active_trades) == 4 and not is_simulation:
+            # check if symbol+interval+_+strategy in active_trades
+            if not f"{parity['symbol']}{parity['interval']}_pmax_bbands" in active_trades:
+                is_simulation = True
+        elif state["pmax_bbands_buy_orderId"] == "test_order_id":
             is_simulation = True
-    elif state["pmax_bbands_buy_orderId"] == "test_order_id":
-        is_simulation = True
-    elif state["pmax_bbands_sell_orderId"] == "test_order_id":
-        is_simulation = True
-    else:
+        elif state["pmax_bbands_sell_orderId"] == "test_order_id":
+            is_simulation = True
+        else:
+            is_simulation = False
+    except KeyError:
         is_simulation = False
-
+    except Exception as e:
+        raise e
+    
     if parity["pmax_bbands"] == True and parity["pmax"] == True and parity["bbands"] == True:
 
         if zone == "up" and lowerband >= pmax and state["pmax_bbands_has_ordered"] == False:
