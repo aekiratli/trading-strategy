@@ -90,7 +90,7 @@ async def pmax_bbands(parity, state, file_name, logger, zone, lowerband, pmax, c
                 quota = parity['pmax_bbands_quota']
                 amount = state["pmax_bbands_bought_amount"]
                 sell_price = state["pmax_bbands_sell_price"]
-                await logger.save({"zone":"buy","bbands": lowerband, "pmax": pmax, "price": close, "amount": amount, "quota": quota,  "strategy": "pmax_bbands"})
+                await logger.save({"is_simulation": is_simulation, "zone":"buy","bbands": lowerband, "pmax": pmax, "price": close, "amount": amount, "quota": quota,  "strategy": "pmax_bbands"})
                 await telegram_bot_sendtext(f"*simulation={is_simulation}-{parity['symbol']}-{parity['interval']} - PMAX-BBANDS - LIMIT BUY ORDER COMPLETED* Buy Price = {close}, Amount = {amount}%0A%0A *{parity['symbol']}-{parity['interval']} - PMAX-BBANDS - LIMIT SELL ORDER* Sell Price = {sell_price}, Amount = {amount}", True)
                 state = update_state_file_and_state(file_name, 'pmax_bbands_bought', state, True)
                 await orders.complete_order(state["pmax_bbands_buy_id"])
@@ -122,7 +122,7 @@ async def pmax_bbands(parity, state, file_name, logger, zone, lowerband, pmax, c
                     f"selling for pmax_bbands -> pmax -> {pmax}, bbands -> {lowerband}, symbol -> {parity['symbol']}, interval -> {parity['interval']}, close -> {close}")
                 quota = parity['pmax_bbands_quota']
                 amount = state["pmax_bbands_bought_amount"]
-                await logger.save({"zone":"sell","bbands": lowerband, "pmax": pmax, "price": close, "amount": amount, "quota": quota,  "strategy": "pmax_bbands"})
+                await logger.save({"is_simulation": is_simulation, "zone":"sell","bbands": lowerband, "pmax": pmax, "price": close, "amount": amount, "quota": quota,  "strategy": "pmax_bbands"})
                 await telegram_bot_sendtext(f"*simulation={is_simulation}-{parity['symbol']}-{parity['interval']} - PMAX-BBANDS - SELL ORDER COMPLETED* Sell Price = {close}, Amount = {amount}", True)
                 await orders.complete_order(state["pmax_bbands_sell_id"])
 

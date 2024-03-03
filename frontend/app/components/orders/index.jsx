@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Button, Select, MenuItem, Table, TableBody, TableCell, TextField, TableContainer, TableHead, TableRow, Paper, Pagination, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Snackbar } from '@mui/material';
+import { Button, Select, MenuItem, Box, Table, TableBody, FormControlLabel, Switch, TableCell, TextField, TableContainer, TableHead, TableRow, Paper, Pagination, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Snackbar } from '@mui/material';
 import MuiAlert from '@mui/material/Alert';
 import Cookies from 'universal-cookie';
 import { timestampToReadableDate } from '@/utils/dates';
@@ -8,6 +8,7 @@ export default function Orders({ parities }) {
   const [page, setPage] = useState(1);
   const [activeButton, setActiveButton] = useState('Open');
   const [orders, setOrders] = useState([]);
+  const [filteredOrders, setFilteredOrders] = useState([]);
   const [openSnackbar, setOpenSnackbar] = useState(false);
   const [symbols, setSymbols] = useState([]);
   const [selectedSymbol, setSelectedSymbol] = useState('');
@@ -18,6 +19,7 @@ export default function Orders({ parities }) {
   const [assets, setAssets] = useState([]);
   const [snackbarMessage, setSnackbarMessage] = useState('');
   const [snackbarSeverity, setSnackbarSeverity] = useState('error');
+  const [isFilteringRealTrades, setIsFilteringRealTrades] = useState(false);
 
   const [openDialog, setOpenDialog] = useState(false);
   const [isNewOrderModalOpen, setIsNewOrderModalOpen] = useState(false);
@@ -116,7 +118,7 @@ export default function Orders({ parities }) {
       if (activeButton === 'Open') {
         setOrders([...orders, data]);
       }
-      
+
     }
     else {
       setOpenSnackbar(true);
@@ -199,14 +201,35 @@ export default function Orders({ parities }) {
     getOrders();
   }, [activeButton]);
 
+  const handleSwitch = (event) => {
+    setIsFilteringRealTrades(event.target.checked);
+  }
+
+  React.useEffect(() => {
+    // filter orders, if checked remove orders with test_order_id
+    if (isFilteringRealTrades) {
+      setFilteredOrders(orders.filter((order) => order.orderId !== 'test_order_id'));
+    }
+    else {
+      setFilteredOrders(orders);
+    }
+  }
+    , [isFilteringRealTrades, orders]);
+    
+
 
   return (
     <div>
       <h1>{activeButton} Orders</h1>
-      <Button onClick={() => handleFilter('Open')}>Open</Button>
-      <Button onClick={() => handleFilter('Completed')}>Completed</Button>
-      <Button onClick={() => handleFilter('Cancelled')}>Cancelled</Button>
-      <Button onClick={() => handleNewOrder()}>Create Order</Button>
+      <Box display="flex" justifyContent="space-between" alignItems="center">
+        <div>
+          <Button onClick={() => handleFilter('Open')}>Open</Button>
+          <Button onClick={() => handleFilter('Completed')}>Completed</Button>
+          <Button onClick={() => handleFilter('Cancelled')}>Cancelled</Button>
+          <Button onClick={() => handleNewOrder()}>Create Order</Button>
+        </div>
+        <FormControlLabel control={<Switch value={isFilteringRealTrades} onChange={handleSwitch}/>} label="Filter Real Trades" />
+      </Box>
 
       <TableContainer component={Paper}>
         <Table>
@@ -227,7 +250,7 @@ export default function Orders({ parities }) {
             </TableRow>
           </TableHead>
           <TableBody>
-            {orders.slice((page - 1) * 5, page * 5).map((order) => (
+            {filteredOrders.slice((page - 1) * 5, page * 5).map((order) => (
               <TableRow key={order.id}>
                 <TableCell>{order.orderId}</TableCell>
                 <TableCell>{timestampToReadableDate(order.timestamp)}</TableCell>
@@ -236,11 +259,11 @@ export default function Orders({ parities }) {
                 <TableCell>{order.amount}</TableCell>
                 <TableCell>{order.strategy}</TableCell>
                 <TableCell>{order.symbol} - {order.interval} </TableCell>
-                {activeButton === 'Open' && order.OrderId !== 'test_order_id' &&(
+                {activeButton === 'Open' && order.orderId !== 'test_order_id' ? (
                   <TableCell>
                     <Button onClick={() => openCancelDialog(order.id)}>Cancel</Button>
                   </TableCell>
-                )}
+                ) : <TableCell></TableCell>}
               </TableRow>
             ))}
           </TableBody>
@@ -341,9 +364,9 @@ export default function Orders({ parities }) {
           <Button onClick={() => setIsNewOrderModalOpen(false)} color="primary">
             Cancel
           </Button>
-          <Button 
-          disabled={!selectedSymbol || !selectedSide || !selectedAmount || !selectedPrice || !selectedType}
-          onClick={() => createOrder()} color="primary">
+          <Button
+            disabled={!selectedSymbol || !selectedSide || !selectedAmount || !selectedPrice || !selectedType}
+            onClick={() => createOrder()} color="primary">
             Create
           </Button>
         </DialogActions>
