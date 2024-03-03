@@ -22,7 +22,10 @@ async def rsi_trading(parity, state, file_name, logger, rsi_value, close, orders
         # check if symbol+interval+_+strategy in active_trades
         if not f"{parity['symbol']}{parity['interval']}_rsi_trading" in active_trades:
             is_simulation = True
-            
+    elif state["rsi_trading_sell_orderId"] == "test_order_id":
+        is_simulation = True
+    else:
+        is_simulation = False            
 
     if parity["rsi_trading"] == True and parity["rsi"] == True:
 
@@ -94,6 +97,10 @@ async def rsi_trading_alt(parity, state, file_name, logger, rsi_value, close, or
         # check if symbol+interval+_+strategy in active_trades
         if not f"{parity['symbol']}{parity['interval']}_rsi_trading_alt" in active_trades:
             is_simulation = True
+    elif state["rsi_trading_alt_sell_orderId"] == "test_order_id":
+        is_simulation = True
+    else:
+        is_simulation = False    
 
     if parity["rsi_trading_alt"] == True and parity["rsi"] == True:
 

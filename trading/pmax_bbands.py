@@ -22,6 +22,12 @@ async def pmax_bbands(parity, state, file_name, logger, zone, lowerband, pmax, c
         # check if symbol+interval+_+strategy in active_trades
         if not f"{parity['symbol']}{parity['interval']}_pmax_bbands" in active_trades:
             is_simulation = True
+    elif state["pmax_bbands_buy_orderId"] == "test_order_id":
+        is_simulation = True
+    elif state["pmax_bbands_sell_orderId"] == "test_order_id":
+        is_simulation = True
+    else:
+        is_simulation = False
 
     if parity["pmax_bbands"] == True and parity["pmax"] == True and parity["bbands"] == True:
 
