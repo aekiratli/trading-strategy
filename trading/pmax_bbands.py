@@ -103,7 +103,7 @@ async def pmax_bbands(parity, state, file_name, logger, zone, lowerband, pmax, c
                         is_order_fullfilled = True
                     else:
                         await asyncio.sleep(10)
-                    return state
+                        return state
                 
             if is_order_fullfilled:
 
