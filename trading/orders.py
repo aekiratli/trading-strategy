@@ -83,13 +83,12 @@ class Orders:
                 order = {"orderId": "test_order_id"}
                 logging.info(f"Simulation order created for {self.parity['symbol']}-{self.parity['interval']}-{strategy}")
             else:
-                order = await self.client.create_order(**order_data)
                 logging.info(f"Real order created for {self.parity['symbol']}-{self.parity['interval']}-{strategy}")
-
                 if action == "buy":
                     existing_data.append(f'{self.parity["symbol"]}{self.parity["interval"]}_{strategy}')
                     with open(f'{self.state_path}/active_trades.json', 'w') as file:
                         json.dump(existing_data, file, indent=2)
+                order = await self.client.create_order(**order_data)
         except Exception as e:
             await telegram_bot_sendtext(f"*{self.parity['symbol']}-{self.parity['interval']} - {strategy} - Order creation failed.* due to the : {e}", True)
             raise e
