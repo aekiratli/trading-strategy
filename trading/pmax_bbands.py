@@ -69,7 +69,10 @@ async def pmax_bbands(parity, state, file_name, logger, zone, lowerband, pmax, c
                     is_order_fullfilled = True
                 else:
                     orderId = state["pmax_bbands_buy_orderId"]
-                    order = await client.get_order(symbol=parity['symbol'], orderId=orderId)
+                    if orderId == "test_order_id":
+                        order = {"status": "FILLED"}
+                    else:
+                        order = await client.get_order(symbol=parity['symbol'], orderId=orderId)
                     if order["status"] == "FILLED":
                         is_order_fullfilled = True
                     else:
@@ -99,7 +102,10 @@ async def pmax_bbands(parity, state, file_name, logger, zone, lowerband, pmax, c
                     is_order_fullfilled = True
                 else:
                     orderId = state["pmax_bbands_sell_orderId"]
-                    order = await client.get_order(symbol=parity['symbol'], orderId=orderId)
+                    if orderId == "test_order_id":
+                        order = {"status": "FILLED"}
+                    else:
+                        order = await client.get_order(symbol=parity['symbol'], orderId=orderId)
                     if order["status"] == "FILLED":
                         is_order_fullfilled = True
                     else:

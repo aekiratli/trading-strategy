@@ -71,23 +71,28 @@ class Orders:
         # usingg lock not always working when using gather
         # wait randomly for 0.00 to 0.99 seconds
         await asyncio.sleep(round(random.uniform(0.00, 4.99), 2))
-        async with asyncio.Lock():
 
-            with open(f'{self.state_path}/active_trades.json', 'r') as file:
-                existing_data = json.load(file)
-                try:
-                    if is_simulation:
-                        await self.client.create_test_order(**order_data)
-                        order = {"orderId": "test_order_id"}
-                    else:
-                        order = await self.client.create_order(**order_data)
-                        if action == "buy":
-                            existing_data.append(f'{self.parity["symbol"]}{self.parity["interval"]}_{strategy}')
-                            with open(f'{self.state_path}/active_trades.json', 'w') as file:
-                                json.dump(existing_data, file, indent=2)
-                except Exception as e:
-                    await telegram_bot_sendtext(f"*{self.parity['symbol']}-{self.parity['interval']} - {strategy} - Order creation failed.* due to the : {e}", True)
-                    raise e
+        with open(f'{self.state_path}/active_trades.json', 'r') as file:
+            existing_data = json.load(file)
+            if len(existing_data) == 4 and not is_simulation:
+                if not f'{self.parity["symbol"]}{self.parity["interval"]}_{strategy}' in existing_data:
+                    is_simulation = True
+        try:
+            if is_simulation:
+                await self.client.create_test_order(**order_data)
+                order = {"orderId": "test_order_id"}
+                logging.info(f"Simulation order created for {self.parity['symbol']}-{self.parity['interval']}-{strategy}")
+            else:
+                order = await self.client.create_order(**order_data)
+                logging.info(f"Real order created for {self.parity['symbol']}-{self.parity['interval']}-{strategy}")
+
+                if action == "buy":
+                    existing_data.append(f'{self.parity["symbol"]}{self.parity["interval"]}_{strategy}')
+                    with open(f'{self.state_path}/active_trades.json', 'w') as file:
+                        json.dump(existing_data, file, indent=2)
+        except Exception as e:
+            await telegram_bot_sendtext(f"*{self.parity['symbol']}-{self.parity['interval']} - {strategy} - Order creation failed.* due to the : {e}", True)
+            raise e
 
 
         ts = int(datetime.now().timestamp())
