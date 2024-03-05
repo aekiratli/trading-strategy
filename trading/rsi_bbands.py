@@ -61,7 +61,7 @@ async def rsi_bbands_alt(parity, state, file_name, logger, lowerband, rsi_value,
                     is_order_fullfilled = True
                 else:
                     orderId = state["rsi_bbands_alt_buy_orderId"]
-                    if orderId == "test_order_id":
+                    if orderId == "test_order_id" or orderId == "":
                         order = {"status": "FILLED"}
                     else:
                         order = await client.get_order(symbol=parity['symbol'], orderId=orderId)
@@ -98,7 +98,7 @@ async def rsi_bbands_alt(parity, state, file_name, logger, lowerband, rsi_value,
                     is_order_fullfilled = True
                 else:
                     orderId = state["rsi_bbands_alt_sell_orderId"]
-                    if orderId == "test_order_id":
+                    if orderId == "test_order_id" or orderId == "":
                         order = {"status": "FILLED"}
                     else:
                         order = await client.get_order(symbol=parity['symbol'], orderId=orderId)
@@ -174,7 +174,7 @@ async def rsi_bbands(parity, state, file_name, logger, lowerband, rsi_value, clo
                     is_order_fullfilled = True
                 else:
                     orderId = state["rsi_bbands_buy_orderId"]
-                    if orderId == "test_order_id":
+                    if orderId == "test_order_id" or orderId == "":
                         order = {"status": "FILLED"}
                     else:
                         order = await client.get_order(symbol=parity['symbol'], orderId=orderId)
@@ -212,7 +212,7 @@ async def rsi_bbands(parity, state, file_name, logger, lowerband, rsi_value, clo
                     is_order_fullfilled = True
                 else:
                     orderId = state["rsi_bbands_sell_orderId"]
-                    if orderId == "test_order_id":
+                    if orderId == "test_order_id" or orderId == "":
                         order = {"status": "FILLED"}
                     else:
                         order = await client.get_order(symbol=parity['symbol'], orderId=orderId)

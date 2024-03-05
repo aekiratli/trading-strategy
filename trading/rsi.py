@@ -61,7 +61,7 @@ async def rsi_trading(parity, state, file_name, logger, rsi_value, close, orders
                     is_order_fullfilled = True
                 else:
                     orderId = state["rsi_trading_sell_orderId"]
-                    if orderId == 'test_order_id':
+                    if orderId == "test_order_id" or orderId == "":
                         order = {"status": "FILLED"}
                     else:
                         order = await client.get_order(symbol=parity['symbol'], orderId = orderId)
@@ -136,7 +136,7 @@ async def rsi_trading_alt(parity, state, file_name, logger, rsi_value, close, or
                     is_order_fullfilled = True
                 else:
                     orderId = state["rsi_trading_alt_sell_orderId"]
-                    if orderId == 'test_order_id':
+                    if orderId == "test_order_id" or orderId == "":
                         order = {"status": "FILLED"}
                     else:
                         order = await client.get_order(symbol=parity['symbol'], orderId = orderId)
