@@ -1,5 +1,5 @@
 import React from 'react';
-import { Card, CardContent, Typography, Box, IconButton, Button, Dialog, DialogActions, DialogTitle } from '@mui/material';
+import { Card, CardContent, Switch, FormControlLabel, Typography, Box, IconButton, Button, Dialog, DialogActions, DialogTitle, Tab } from '@mui/material';
 import RestartAltIcon from '@mui/icons-material/RestartAlt';
 import Modal from '@mui/material/Modal';
 import Cookies from 'universal-cookie';
@@ -34,7 +34,7 @@ const ENUM_STRATEGIES = {
 }
 
 function getStrategyName(strategy) {
-  return ENUM_STRATEGIES[strategy];
+  return ENUM_STRATEGIES[strategy] || "All Strategies";
 }
 
 function calculateProfit(transactions) {
@@ -57,7 +57,8 @@ export default function TradingOverview({ parities }) {
   const STRATEGIES = process.env.NEXT_PUBLIC_STRATEGIES.split(',');
   const [filteredParities, setFilteredParities] = React.useState(parities);
   const [isLogsModalOpen, setIsLogsModalOpen] = React.useState(false);
-  const [logs, setLogs] = React.useState(null);
+  const [logs, setLogs] = React.useState([]);
+  const [filteredLogs, setFilteredLogs] = React.useState([]);
   const [is400, setIs400] = React.useState(false);
   const [isCardClicked, setIsCardClicked] = React.useState(false);
   const [selectedParity, setSelectedParity] = React.useState({});
@@ -65,6 +66,7 @@ export default function TradingOverview({ parities }) {
   const [interventions, setInterventions] = React.useState({});
   const [selectedStrategy, setSelectedStrategy] = React.useState("null");
   const [isInterveneModalOpen, setIsInterveneModalOpen] = React.useState(false);
+  const [isRealTradesFiltered, setIsRealTradesFiltered] = React.useState(false);
 
   React.useEffect(() => {
     if (!parities) {
@@ -91,7 +93,7 @@ export default function TradingOverview({ parities }) {
     async function getSummary() {
       const token = new Cookies().get('token');
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/logs/summary`,
-      {
+        {
           headers: {
             'Authorization': `Bearer ${token}` // Use appropriate authentication scheme and token format
             // If you're using a different type of authentication, adjust the header accordingly
@@ -106,7 +108,7 @@ export default function TradingOverview({ parities }) {
     async function getInterventions() {
       const token = new Cookies().get('token');
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/list_intervened`,
-      {
+        {
           headers: {
             'Authorization': `Bearer ${token}` // Use appropriate authentication scheme and token format
             // If you're using a different type of authentication, adjust the header accordingly
@@ -195,19 +197,19 @@ export default function TradingOverview({ parities }) {
     return false;
   }
 
-  const handleSummary =  (parity, strategy) => {
+  const handleSummary = (parity, strategy) => {
     const parityName = parity.symbol + parity.interval;
-        // Check if the summaryData is not null or undefined
-        if (summary && summary[parityName] && summary[parityName][strategy]) {
-          // Extract the total number of transactions for the given parity
-          const totalTransactions = summary[parityName][strategy];
-          // Display the total number of transactions
-          return totalTransactions;
-      } else {
-          // If the parity is not found in the summaryData, display a message
-          return 0;
-          // You can handle this case in your frontend UI as needed
-      }
+    // Check if the summaryData is not null or undefined
+    if (summary && summary[parityName] && summary[parityName][strategy]) {
+      // Extract the total number of transactions for the given parity
+      const totalTransactions = summary[parityName][strategy];
+      // Display the total number of transactions
+      return totalTransactions;
+    } else {
+      // If the parity is not found in the summaryData, display a message
+      return 0;
+      // You can handle this case in your frontend UI as needed
+    }
   }
 
   const handleOpenIntervene = async (parity) => {
@@ -234,6 +236,27 @@ export default function TradingOverview({ parities }) {
     }
   }
 
+  const handleSwitch = (event) => {
+    setIsRealTradesFiltered(event.target.checked);
+  }
+
+  React.useEffect(() => {
+    if (isRealTradesFiltered) {
+      const newLogs = [];
+      logs.map((log) => {
+        if (log.is_simulation !== false) {
+          newLogs.push(log);
+        }
+
+      });
+      setFilteredLogs(newLogs);
+    }
+    else {
+      setFilteredLogs(logs);
+    }
+  }
+    , [isRealTradesFiltered, logs]);
+
   return (
     <Box style={{ backgroundColor: 'black' }}>
       <Box display="flex" flexWrap="wrap">
@@ -248,7 +271,7 @@ export default function TradingOverview({ parities }) {
           >
             <CardContent>
               <Typography variant="h5" component="div">
-                {parity.symbol} - {parity.interval} {checkIfIntervened(parity) && <IconButton onClick={()=>{handleOpenIntervene(parity)}}><RestartAltIcon /></IconButton>}
+                {parity.symbol} - {parity.interval} {checkIfIntervened(parity) && <IconButton onClick={() => { handleOpenIntervene(parity) }}><RestartAltIcon /></IconButton>}
               </Typography>
               <Typography variant="body2">
                 {STRATEGIES.map((strategy) => (
@@ -259,7 +282,7 @@ export default function TradingOverview({ parities }) {
                         onClick={() => handleLogs(parity, strategy)}
                         style={{ margin: '5px' }}
                       >
-                        {getStrategyName(strategy)} - {'('+handleSummary(parity, strategy) +')'}
+                        {getStrategyName(strategy)} - {'(' + handleSummary(parity, strategy) + ')'}
                       </Button>
                     )}
                   </Box>
@@ -269,7 +292,7 @@ export default function TradingOverview({ parities }) {
                   onClick={() => handleCardClick(parity)}
                   style={{ margin: '5px' }}
                 >
-                  All Logs - {'('+handleSummary(parity, 'total') +')'}
+                  All Logs - {'(' + handleSummary(parity, 'total') + ')'}
                 </Button>
               </Typography>
             </CardContent>
@@ -283,9 +306,12 @@ export default function TradingOverview({ parities }) {
         aria-describedby="modal-modal-description"
       >
         <Box sx={style}>
-          <Typography align="center" style={{ paddingBottom: '20px' }}>
-            {selectedParity?.symbol} - {selectedParity?.interval} - {getStrategyName(selectedStrategy)}
-          </Typography>
+          <Box display="flex" justifyContent="space-between" alignItems="center">
+            <Typography align="center" style={{ paddingBottom: '20px' }}>
+              {selectedParity?.symbol} - {selectedParity?.interval} - {getStrategyName(selectedStrategy)}
+            </Typography>
+            <FormControlLabel control={<Switch value={isRealTradesFiltered} onChange={handleSwitch} />} label="Real Logs" />
+          </Box>
           {logs && !is400 && (
             <TableContainer>
               <Table sx={{ minWidth: 650 }} aria-label="simple table">
@@ -295,11 +321,12 @@ export default function TradingOverview({ parities }) {
                     <TableCell align="right">Zone</TableCell>
                     <TableCell align="right">Price</TableCell>
                     <TableCell align="right">Quantity</TableCell>
+                    <TableCell align="right">Is Simulation</TableCell>
                     {isCardClicked && <TableCell align="right">Strategy</TableCell>}
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {logs.map((log, index) => (
+                  {filteredLogs.map((log, index) => (
                     <TableRow
                       key={index}
                       sx={{ backgroundColor: log.zone === 'buy' ? 'green' : 'red' }}
@@ -310,6 +337,7 @@ export default function TradingOverview({ parities }) {
                       <TableCell align="right">{log.zone}</TableCell>
                       <TableCell align="right">{log.price}</TableCell>
                       <TableCell align="right">{log.amount}</TableCell>
+                      <TableCell align="right">{log.is_simulation ? 'Yes' : 'No'}</TableCell>
                       {isCardClicked && <TableCell align="right">{log.strategy}</TableCell>}
                     </TableRow>
                   ))}
@@ -329,18 +357,18 @@ export default function TradingOverview({ parities }) {
           )}
         </Box>
       </Modal>
-        <Dialog open={isInterveneModalOpen} onClose={() => setIsInterveneModalOpen(false)} fullWidth maxWidth="md">
-          <DialogTitle>
-            Remove intervene in {selectedParity.symbol} - {selectedParity.interval} . CHECK "active_trades.json" FROM PYTHONANYHWERE ! CONTACT ADMIN !
-          </DialogTitle>
-          <DialogActions>
-            <Button onClick={() => setIsInterveneModalOpen(false)}>Cancel</Button>
-            <Button onClick={() => {
-              handleIntervene(selectedParity);
-              setIsInterveneModalOpen(false);
-            }}>Intervene</Button>
-          </DialogActions>
-        </Dialog>
+      <Dialog open={isInterveneModalOpen} onClose={() => setIsInterveneModalOpen(false)} fullWidth maxWidth="md">
+        <DialogTitle>
+          Remove intervene in {selectedParity.symbol} - {selectedParity.interval} . CHECK "active_trades.json" FROM PYTHONANYHWERE ! CONTACT ADMIN !
+        </DialogTitle>
+        <DialogActions>
+          <Button onClick={() => setIsInterveneModalOpen(false)}>Cancel</Button>
+          <Button onClick={() => {
+            handleIntervene(selectedParity);
+            setIsInterveneModalOpen(false);
+          }}>Intervene</Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }

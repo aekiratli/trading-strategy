@@ -1,8 +1,9 @@
 import React from 'react';
 import Cookies from 'universal-cookie';
-import { Card, CardContent, Typography, Grid, Button, Dialog, DialogTitle, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TablePagination, Tab} from '@mui/material';
+import { Card, CardContent, Typography, Grid, Button, Dialog, DialogTitle, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TablePagination, Tab } from '@mui/material';
 import { timestampToReadableDate } from '@/utils/dates';
 import styled from 'styled-components';
+import fourofour from './404.png'
 
 export default function Account() {
 
@@ -23,7 +24,7 @@ export default function Account() {
 
   const handleRowClick = async (order) => {
     const token = new Cookies().get('token');
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/trades/${selectedAsset+'USDT'}/${order.orderId}`,
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/trades/${selectedAsset + 'USDT'}/${order.orderId}`,
       {
         method: 'GET',
         headers: {
@@ -43,7 +44,7 @@ export default function Account() {
     setRowsPerPage(parseInt(event.target.value, 10));
     setPage(0);
   };
-  
+
 
   const handleClickOpen = async (symbol) => {
     const token = new Cookies().get('token');
@@ -108,13 +109,20 @@ export default function Account() {
   }
     , []);
 
-    
-    const StyledTableRow = styled(TableRow)`
+
+  const StyledTableRow = styled(TableRow)`
     &:hover {
       background-color: #f2f2f2; // change background color on hover
       cursor: pointer; // change cursor to pointer on hover
     }
   `;
+
+  const getAssetImage = (asset) => {
+    if (asset === 'ARB')
+      return fourofour.src
+    return `${PUBLIC_ASSET_URL}${asset.toLowerCase()}.png`
+
+  }
 
   return (
     <div>
@@ -132,7 +140,7 @@ export default function Account() {
             }}
               onClick={() => { handleClickOpen(asset.asset) }}>
               <CardContent>
-                <img src={`${PUBLIC_ASSET_URL}${asset.asset.toLowerCase()}.png`} alt={asset.asset} style={{ width: '50px', height: '50px' }} />
+                <img src={getAssetImage(asset.asset)} alt={asset.asset} style={{ width: '50px', height: '50px' }} />
                 <Typography variant="h5" component="div">
                   {asset.asset}
                 </Typography>
@@ -168,7 +176,7 @@ export default function Account() {
             </TableHead>
             <TableBody>
               {assetOrders.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((item, index) => (
-                <StyledTableRow onClick={() => {handleRowClick(item)}} key={index}>
+                <StyledTableRow onClick={() => { handleRowClick(item) }} key={index}>
                   {/* Add table cells here */}
                   <TableCell>{item.orderId}</TableCell>
                   <TableCell>{timestampToReadableDate(item.time / 1000)}</TableCell>
@@ -205,7 +213,7 @@ export default function Account() {
               <TableCell>Amount</TableCell>
               <TableCell>Amount Executed</TableCell>
               <TableCell>Side</TableCell>
- 
+
             </TableRow>
           </TableHead>
           <TableBody>

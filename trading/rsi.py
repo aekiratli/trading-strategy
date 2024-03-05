@@ -22,8 +22,8 @@ async def rsi_trading(parity, state, file_name, logger, rsi_value, close, orders
         # check if symbol+interval+_+strategy in active_trades
         if not f"{parity['symbol']}{parity['interval']}_rsi_trading" in active_trades:
             is_simulation = True
-            
 
+    
     if parity["rsi_trading"] == True and parity["rsi"] == True:
 
         if rsi_value <= parity["rsi_trading_buy_limit"] and state["rsi_trading_bought"] == False:
@@ -36,7 +36,7 @@ async def rsi_trading(parity, state, file_name, logger, rsi_value, close, orders
             await orders.create_order(amount, close, "buy", 'rsi_trading', 'market', buy_id, is_simulation)
             await orders.complete_order(buy_id)
             await asyncio.sleep(5)
-            await logger.save({"zone": "buy", "price": close, "amount": amount, "quota": quota,  "strategy": "rsi_trading"})
+            await logger.save({"is_simulation": is_simulation, "zone": "buy", "price": close, "amount": amount, "quota": quota,  "strategy": "rsi_trading"})
             
             state = update_state_file_and_state(file_name, 'rsi_trading_bought', state, True)
             state = update_state_file_and_state(file_name, 'rsi_trading_buy_price', state, close)
@@ -61,7 +61,10 @@ async def rsi_trading(parity, state, file_name, logger, rsi_value, close, orders
                     is_order_fullfilled = True
                 else:
                     orderId = state["rsi_trading_sell_orderId"]
-                    order = await client.get_order(symbol=parity['symbol'], orderId = orderId)
+                    if orderId == 'test_order_id':
+                        order = {"status": "FILLED"}
+                    else:
+                        order = await client.get_order(symbol=parity['symbol'], orderId = orderId)
                     if order["status"] == "FILLED":
                         is_order_fullfilled = True
                         state = update_state_file_and_state(file_name, 'rsi_trading_sell_orderId', state, "")
@@ -75,7 +78,7 @@ async def rsi_trading(parity, state, file_name, logger, rsi_value, close, orders
             amount = state["rsi_trading_bought_amount"]
             sell_id = state["rsi_trading_alt_sell_id"]
             await orders.complete_order(sell_id)
-            await logger.save({"zone": "sell", "price": close, "amount": amount, "quota": quota, "strategy": "rsi_trading"})
+            await logger.save({"is_simulation": is_simulation, "zone": "sell", "price": close, "amount": amount, "quota": quota, "strategy": "rsi_trading"})
             await telegram_bot_sendtext(f"*simulation={is_simulation}-{parity['symbol']}-{parity['interval']} - RSI 21 - LIMIT SELL ORDER COMPLETED* Price = {close}, Amount = {amount}", True)
             state = update_state_file_and_state(file_name, 'rsi_trading_bought', state, False)
             state = update_state_file_and_state(file_name, 'rsi_trading_buy_price', state, 0)
@@ -95,6 +98,7 @@ async def rsi_trading_alt(parity, state, file_name, logger, rsi_value, close, or
         if not f"{parity['symbol']}{parity['interval']}_rsi_trading_alt" in active_trades:
             is_simulation = True
 
+    
     if parity["rsi_trading_alt"] == True and parity["rsi"] == True:
 
         if rsi_value <= parity["rsi_trading_alt_buy_limit"] and state["rsi_trading_alt_bought"] == False:
@@ -119,7 +123,7 @@ async def rsi_trading_alt(parity, state, file_name, logger, rsi_value, close, or
             orderId = await orders.create_order(amount, sell_price, "sell", 'rsi_trading_alt', 'limit', sell_id, is_simulation)
             state = update_state_file_and_state(file_name, 'rsi_trading_alt_sell_orderId', state, orderId)
             state = update_state_file_and_state(file_name, 'rsi_trading_alt_sell_id', state, sell_id)
-            await logger.save({"zone": "buy", "price": close, "amount": amount, "quota": quota,  "strategy": "rsi_trading_alt"})
+            await logger.save({"is_simulation": is_simulation, "zone": "buy", "price": close, "amount": amount, "quota": quota,  "strategy": "rsi_trading_alt"})
 
             await telegram_bot_sendtext(f"*simulation={is_simulation}-{parity['symbol']}-{parity['interval']} - RSI 26 - MARKET BUY* Price = {close}, Amount = {amount}, RSI = {rsi_value}%0A%0A *{parity['symbol']}-{parity['interval']} - RSI ALT - LIMIT ORDER SELL* Price = {close * parity['rsi_trading_sell_percentage']}, Amount = {amount}", True)
 
@@ -132,7 +136,10 @@ async def rsi_trading_alt(parity, state, file_name, logger, rsi_value, close, or
                     is_order_fullfilled = True
                 else:
                     orderId = state["rsi_trading_alt_sell_orderId"]
-                    order = await client.get_order(symbol=parity['symbol'], orderId = orderId)
+                    if orderId == 'test_order_id':
+                        order = {"status": "FILLED"}
+                    else:
+                        order = await client.get_order(symbol=parity['symbol'], orderId = orderId)
                     if order["status"] == "FILLED":
                         is_order_fullfilled = True
                         state = update_state_file_and_state(file_name, 'rsi_trading_alt_sell_orderId', state, "")
@@ -148,7 +155,7 @@ async def rsi_trading_alt(parity, state, file_name, logger, rsi_value, close, or
                 amount = state["rsi_trading_alt_bought_amount"]
                 sell_id = state["rsi_trading_alt_sell_id"]
                 await orders.complete_order(sell_id)
-                await logger.save({"zone": "sell", "price": close, "amount": amount, "quota": quota, "strategy": "rsi_trading_alt"})
+                await logger.save({"is_simulation": is_simulation, "zone": "sell", "price": close, "amount": amount, "quota": quota, "strategy": "rsi_trading_alt"})
                 await telegram_bot_sendtext(f"*simulation={is_simulation}-{parity['symbol']}-{parity['interval']} - RSI 26 - LIMIT SELL ORDER COMPLETED* Price = {close}, Amount = {amount}", True)
                 state = update_state_file_and_state(file_name, 'rsi_trading_alt_bought', state, False)
                 state = update_state_file_and_state(file_name, 'rsi_trading_alt_buy_price', state, 0)
