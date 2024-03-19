@@ -34,19 +34,16 @@ async def rsi_bbands_alt(parity, state, file_name, logger, lowerband, rsi_value,
             sell_price = close * sell
             buy_price = round(buy_price, 4)
             sell_price = round(sell_price, 4)
-            logging.info(f"buying for rsi_bbands_alt -> rsi_value -> {rsi_value}, bbands -> {lowerband}, symbol -> {parity['symbol']}, interval -> {parity['interval']}, close -> {close}")
+            logging.info(f"buy signal for rsi_bbands_alt -> rsi_value -> {rsi_value}, bbands -> {lowerband}, symbol -> {parity['symbol']}, interval -> {parity['interval']}, close -> {close}")
             quota = parity['rsi_bbands_alt_quota']
-            # calculate the amount to buy
             amount_to_buy = quota / float(buy_price)
-            # use decimal  of 4
             amount = round(amount_to_buy, 4)       
-            buy_id = str(uuid.uuid4())
-            orderId = await orders.create_order(amount, buy_price, "buy", 'rsi_bbands_alt', 'limit', buy_id,is_simulation)
-            state = update_state_file_and_state(file_name, 'rsi_bbands_alt_buy_id', state, buy_id)
+            #buy_id = str(uuid.uuid4())
+            #orderId = await orders.create_order(amount, buy_price, "buy", 'rsi_bbands_alt', 'limit', buy_id,is_simulation)
+            #state = update_state_file_and_state(file_name, 'rsi_bbands_alt_buy_id', state, buy_id)
             # orderId state update
-            state = update_state_file_and_state(file_name, 'rsi_bbands_alt_buy_orderId', state, orderId)
-            await asyncio.sleep(1)
-            await telegram_bot_sendtext(f"*simulation={is_simulation}-{parity['symbol']}-{parity['interval']} - RSI-BBANDS-26 - LIMIT BUY ORDER* Buy Price = {buy_price}, Amount = {amount}", True)
+            #state = update_state_file_and_state(file_name, 'rsi_bbands_alt_buy_orderId', state, orderId)
+            #await telegram_bot_sendtext(f"*simulation={is_simulation}-{parity['symbol']}-{parity['interval']} - RSI-BBANDS-26 - LIMIT BUY ORDER* Buy Price = {buy_price}, Amount = {amount}", True)
             state = update_state_file_and_state(file_name, 'rsi_bbands_alt_bought_amount', state, amount)
             state = update_state_file_and_state(file_name, 'rsi_bbands_alt_buy_price', state, buy_price)
             state = update_state_file_and_state(file_name, 'rsi_bbands_alt_sell_price', state, sell_price)
@@ -54,40 +51,27 @@ async def rsi_bbands_alt(parity, state, file_name, logger, lowerband, rsi_value,
   
 
         if close <= state["rsi_bbands_alt_buy_price"] and state["rsi_bbands_alt_has_ordered"] == True and state["rsi_bbands_alt_bought"] == False:
+                
+            quota = parity['rsi_bbands_alt_quota']
+            amount = state["rsi_bbands_alt_bought_amount"]
+            buy_price = state["rsi_bbands_alt_buy_price"]
 
-            is_order_fullfilled = False
-            if not is_order_fullfilled:
-                if is_simulation:
-                    is_order_fullfilled = True
-                else:
-                    orderId = state["rsi_bbands_alt_buy_orderId"]
-                    if orderId == "test_order_id" or orderId == "":
-                        order = {"status": "FILLED"}
-                    else:
-                        order = await client.get_order(symbol=parity['symbol'], orderId=orderId)
-                    if order["status"] == "FILLED":
-                        is_order_fullfilled = True
-                        state = update_state_file_and_state(file_name, 'rsi_bbands_alt_buy_orderId', state, "")
-                    else:
-                        await asyncio.sleep(10)
-                        return state
-                    
-            if is_order_fullfilled:
+            buy_id = str(uuid.uuid4())
+            await orders.create_order(amount, buy_price, "buy", 'rsi_bbands_alt', 'market', buy_id,is_simulation)
+            await orders.complete_order(state["buy_id"])
+            await asyncio.sleep(1)
 
-                quota = parity['rsi_bbands_alt_quota']
-                amount = state["rsi_bbands_alt_bought_amount"]
-                sell_price = state["rsi_bbands_alt_sell_price"]
-                sell_id = str(uuid.uuid4())
-                orderId = await orders.create_order(amount, sell_price, "sell", 'rsi_bbands_alt', 'limit', sell_id,is_simulation)
-                state = update_state_file_and_state(file_name, 'rsi_bbands_alt_sell_id', state, sell_id)
-                state = update_state_file_and_state(file_name, 'rsi_bbands_alt_sell_orderId', state, orderId)
-                await orders.complete_order(state["rsi_bbands_alt_buy_id"])
-                await asyncio.sleep(1)
+            sell_price = state["rsi_bbands_alt_sell_price"]
+            sell_id = str(uuid.uuid4())
+            orderId = await orders.create_order(amount, sell_price, "sell", 'rsi_bbands_alt', 'limit', sell_id,is_simulation)
+            state = update_state_file_and_state(file_name, 'rsi_bbands_alt_sell_id', state, sell_id)
+            state = update_state_file_and_state(file_name, 'rsi_bbands_alt_sell_orderId', state, orderId)
+            await asyncio.sleep(1)
 
-                await logger.save({"is_simulation": is_simulation, "zone":"buy","bbands": lowerband, "rsi": rsi_value, "price": close, "amount": amount, "quota": quota,  "strategy": "rsi_bbands_alt"})
-                await telegram_bot_sendtext(f"*simulation={is_simulation}-{parity['symbol']}-{parity['interval']} - RSI-BBANDS-26 - LIMIT BUY ORDER COMPLETED* Buy Price = {close}, Amount = {amount}%0A%0A * {parity['symbol']}-{parity['interval']} - RSI-BBANDS-26 - LIMIT SELL ORDER * Sell Price = {sell_price}, Amount = {amount}", True)
-                state = update_state_file_and_state(file_name, 'rsi_bbands_alt_bought', state, True)
-                state = update_state_file_and_state(file_name, 'rsi_bbands_alt_buy_id', state, "")
+            await logger.save({"is_simulation": is_simulation, "zone":"buy","bbands": lowerband, "rsi": rsi_value, "price": close, "amount": amount, "quota": quota,  "strategy": "rsi_bbands_alt"})
+            await telegram_bot_sendtext(f"*simulation={is_simulation}-{parity['symbol']}-{parity['interval']} - RSI-BBANDS-26 - MARKET BUY ORDER COMPLETED* Buy Price = {close}, Amount = {amount}%0A%0A * {parity['symbol']}-{parity['interval']} - RSI-BBANDS-26 - LIMIT SELL ORDER * Sell Price = {sell_price}, Amount = {amount}", True)
+            state = update_state_file_and_state(file_name, 'rsi_bbands_alt_bought', state, True)
+            state = update_state_file_and_state(file_name, 'rsi_bbands_alt_buy_id', state, "")
                 
         # sell if price is higher than sell price
         if close >= state["rsi_bbands_alt_sell_price"] and state["rsi_bbands_alt_bought"] == True:
@@ -145,17 +129,16 @@ async def rsi_bbands(parity, state, file_name, logger, lowerband, rsi_value, clo
             # round to 4 decimal places
             buy_price = round(buy_price, 4)
             sell_price = round(sell_price, 4)
-            logging.info(f"buying for rsi_bbands -> rsi_value -> {rsi_value}, bbands -> {lowerband}, symbol -> {parity['symbol']}, interval -> {parity['interval']}, close -> {close}")
+            logging.info(f"buying signal rsi_bbands -> rsi_value -> {rsi_value}, bbands -> {lowerband}, symbol -> {parity['symbol']}, interval -> {parity['interval']}, close -> {close}")
             quota = parity['rsi_bbands_quota']
             # calculate the amount to buy
             amount_to_buy = quota / float(buy_price)
             # use decimal  of 4
             amount = round(amount_to_buy, 4)
-            buy_id = str(uuid.uuid4())
-            orderId = await orders.create_order(amount, buy_price, "buy", 'rsi_bbands', 'limit', buy_id,is_simulation)
-            state = update_state_file_and_state(file_name, 'rsi_bbands_buy_id', state, buy_id)
-            state = update_state_file_and_state(file_name, 'rsi_bbands_buy_orderId', state, orderId)
-            await asyncio.sleep(1)
+            #buy_id = str(uuid.uuid4())
+            #orderId = await orders.create_order(amount, buy_price, "buy", 'rsi_bbands', 'limit', buy_id,is_simulation)
+            #state = update_state_file_and_state(file_name, 'rsi_bbands_buy_id', state, buy_id)
+            #state = update_state_file_and_state(file_name, 'rsi_bbands_buy_orderId', state, orderId)
 
             await telegram_bot_sendtext(f"*simulation={is_simulation}-{parity['symbol']}-{parity['interval']} - RSI-BBANDS-21 - LIMIT BUY ORDER* Buy Price = {buy_price}, Amount = {amount}", True)
 
@@ -168,39 +151,26 @@ async def rsi_bbands(parity, state, file_name, logger, lowerband, rsi_value, clo
 
         if close <= state["rsi_bbands_buy_price"] and state["rsi_bbands_has_ordered"] == True and state["rsi_bbands_bought"] == False:
 
-            is_order_fullfilled = False
-            if not is_order_fullfilled:
-                if is_simulation:
-                    is_order_fullfilled = True
-                else:
-                    orderId = state["rsi_bbands_buy_orderId"]
-                    if orderId == "test_order_id" or orderId == "":
-                        order = {"status": "FILLED"}
-                    else:
-                        order = await client.get_order(symbol=parity['symbol'], orderId=orderId)
-                    if order["status"] == "FILLED":
-                        is_order_fullfilled = True
-                        state = update_state_file_and_state(file_name, 'rsi_bbands_buy_orderId', state, "")
-                    else:
-                        await asyncio.sleep(10)
-                        return state
-            
-            if is_order_fullfilled:
+            quota = parity['rsi_bbands_quota']
+            amount = state["rsi_bbands_bought_amount"]
+            buy_price = state["rsi_bbands_buy_price"]
 
-                quota = parity['rsi_bbands_quota']
-                amount = state["rsi_bbands_bought_amount"]
-                sell_price = state["rsi_bbands_sell_price"]
-                sell_id = str(uuid.uuid4())
+            buy_id = str(uuid.uuid4())
+            orderId = await orders.create_order(amount, buy_price, "buy", 'rsi_bbands', 'limit', buy_id,is_simulation)
+            await orders.complete_order(buy_id)
+            await asyncio.sleep(1)
 
-                orderId = await orders.create_order(amount, sell_price, "sell", 'rsi_bbands', 'limit', sell_id,is_simulation)
-                state = update_state_file_and_state(file_name, 'rsi_bbands_sell_orderId', state, orderId)
-                state = update_state_file_and_state(file_name, 'rsi_bbands_sell_id', state, sell_id)
-                await orders.complete_order(state["rsi_bbands_buy_id"])
-                state = update_state_file_and_state(file_name, 'rsi_bbands_buy_id', state, "")
+            sell_price = state["rsi_bbands_sell_price"]
+            sell_id = str(uuid.uuid4())
 
-                await logger.save({"is_simulation": is_simulation, "zone":"buy", "bbands": lowerband, "rsi": rsi_value, "price": close, "amount": amount, "quota": quota,  "strategy": "rsi_bbands"})
-                await telegram_bot_sendtext(f"*simulation={is_simulation}-{parity['symbol']}-{parity['interval']} - RSI-BBANDS-21 - LIMIT BUY ORDER COMPLETED* Buy Price = {close}, Amount = {amount}%0A%0A *{parity['symbol']}-{parity['interval']} - RSI-BBANDS - LIMIT SELL ORDER* Sell Price = {sell_price}, Amount = {amount}", True)
-                state = update_state_file_and_state(file_name, 'rsi_bbands_bought', state, True)
+            orderId = await orders.create_order(amount, sell_price, "sell", 'rsi_bbands', 'limit', sell_id,is_simulation)
+            state = update_state_file_and_state(file_name, 'rsi_bbands_sell_orderId', state, orderId)
+            state = update_state_file_and_state(file_name, 'rsi_bbands_sell_id', state, sell_id)
+            state = update_state_file_and_state(file_name, 'rsi_bbands_buy_id', state, "")
+
+            await logger.save({"is_simulation": is_simulation, "zone":"buy", "bbands": lowerband, "rsi": rsi_value, "price": close, "amount": amount, "quota": quota,  "strategy": "rsi_bbands"})
+            await telegram_bot_sendtext(f"*simulation={is_simulation}-{parity['symbol']}-{parity['interval']} - RSI-BBANDS-21 - MARKET BUY ORDER COMPLETED* Buy Price = {close}, Amount = {amount}%0A%0A *{parity['symbol']}-{parity['interval']} - RSI-BBANDS - LIMIT SELL ORDER* Sell Price = {sell_price}, Amount = {amount}", True)
+            state = update_state_file_and_state(file_name, 'rsi_bbands_bought', state, True)
 
 
         # sell if price is higher than sell price

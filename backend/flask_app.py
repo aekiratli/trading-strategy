@@ -68,20 +68,7 @@ def login():
 @app.route('/list_parities')
 @jwt_required()
 def list_parities():
-    resp = requests.get(
-        urljoin(api_base, "files/path/home/{username}/{path}".format(
-            username=app.config['PYTHONANYWHERE_USERNAME'], path=app.config['WORKDIR'])),
-        headers={"Authorization": "Token {api_token}".format(api_token=app.config['PYTHONANYWHERE_TOKEN'])})
-
-    parities = []
-    for parity in resp.json():
-        resp = requests.get(
-            urljoin(api_base, "files/path/home/{username}/{path}/{file}".format(
-                username=app.config['PYTHONANYWHERE_USERNAME'], path=app.config["WORKDIR"], file=parity)),
-            headers={"Authorization": "Token {api_token}".format(
-                api_token=app.config['PYTHONANYWHERE_TOKEN'])}
-        )
-        parities.append(resp.json())
+    parities = {}
     return jsonify(parities), 200
 
 

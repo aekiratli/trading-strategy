@@ -269,7 +269,7 @@ export default function Orders({ parities }) {
           </TableBody>
         </Table>
       </TableContainer>
-      <Pagination count={Math.ceil(orders.length / 5)} page={page} onChange={handleChange} />
+      <Pagination count={Math.ceil(filteredOrders.length / 20)} page={page} onChange={handleChange} />
       <Dialog
         open={openDialog}
         onClose={closeDialog}
