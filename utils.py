@@ -15,6 +15,8 @@ TRADING_CHAT_ID = os.getenv("TRADING_CHAT_ID")
 PARITIES_PATH = os.getenv("PARITIES_PATH")
 STATE_PATH = os.getenv("STATE_PATH")
 UPDATE_PATH = os.getenv("UPDATE_PATH")
+DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
+DISCORD_CHANNEL_ID = os.getenv("DISCORD_CHANNEL_ID")
 
 class NpEncoder(json.JSONEncoder):
     def default(self, obj):
@@ -40,6 +42,27 @@ async def telegram_bot_sendtext(msg, is_trade=False):
     async with aiohttp.ClientSession() as session:
         async with session.get(send_text) as resp:
             pass
+
+async def discord_bot_sendtext(msg):
+    bot_token = DISCORD_TOKEN
+    url = f"https://discord.com/api/channels/{DISCORD_CHANNEL_ID}/messages"
+
+    headers = {
+        "Authorization": f"Bot {bot_token}",
+        "Content-Type": "application/json",
+    }
+
+    data = {
+        "content": msg,
+    }
+
+    async with aiohttp.ClientSession() as session:
+        async with session.post(url, headers=headers, data=json.dumps(data)) as resp:
+            try:
+                if resp.status != 200:
+                    print(await resp.text())
+            except Exception as e:
+                print(e)
 
 def update_state_file(file_name, state, state_value):
     state_file_path = f'{STATE_PATH}/{file_name}_state.json'
