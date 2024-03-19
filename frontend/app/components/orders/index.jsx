@@ -250,7 +250,7 @@ export default function Orders({ parities }) {
             </TableRow>
           </TableHead>
           <TableBody>
-            {filteredOrders.slice((page - 1) * 5, page * 5).map((order) => (
+            {filteredOrders.slice((page - 1) * 20, page * 20).map((order) => (
               <TableRow key={order.id}>
                 <TableCell>{order.orderId}</TableCell>
                 <TableCell>{timestampToReadableDate(order.timestamp)}</TableCell>
