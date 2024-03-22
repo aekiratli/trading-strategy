@@ -1,4 +1,4 @@
-from utils import telegram_bot_sendtext, update_state_file, initialize_parities, initialize_state_files, read_state_file, update_state_file_and_state
+from utils import telegram_bot_sendtext, discord_bot_sendtext, initialize_parities, initialize_state_files, read_state_file, update_state_file_and_state
 import logging
 from logger import Logger
 import asyncio
@@ -67,7 +67,7 @@ async def pmax_bbands(parity, state, file_name, logger, zone, lowerband, pmax, c
             await logger.save({"is_simulation": is_simulation, "zone":"buy","bbands": lowerband, "pmax": pmax, "price": close, "amount": amount, "quota": quota,  "strategy": "pmax_bbands"})
             await telegram_bot_sendtext(f"*simulation={is_simulation}-{parity['symbol']}-{parity['interval']} - PMAX-BBANDS - MARKET BUY COMPLETED* Buy Price = {close}, Amount = {amount}%0A%0A *{parity['symbol']}-{parity['interval']} - PMAX-BBANDS - LIMIT SELL ORDER* Sell Price = {sell_price}, Amount = {amount}", True)
             state = update_state_file_and_state(file_name, 'pmax_bbands_bought', state, True)
-
+            await discord_bot_sendtext(f"*{parity['symbol']}-{parity['interval']}* BUY SIGNAL!")
             sell_id = str(uuid.uuid4())
             orderId = await orders.create_order(amount, sell_price, "sell", 'pmax_bbands', 'limit', sell_id, is_simulation)
             state = update_state_file_and_state(file_name, 'pmax_bbands_sell_orderId', state, orderId)
@@ -101,7 +101,7 @@ async def pmax_bbands(parity, state, file_name, logger, zone, lowerband, pmax, c
                 await logger.save({"is_simulation": is_simulation, "zone":"sell","bbands": lowerband, "pmax": pmax, "price": close, "amount": amount, "quota": quota,  "strategy": "pmax_bbands"})
                 await telegram_bot_sendtext(f"*simulation={is_simulation}-{parity['symbol']}-{parity['interval']} - PMAX-BBANDS - SELL ORDER COMPLETED* Sell Price = {close}, Amount = {amount}", True)
                 await orders.complete_order(state["pmax_bbands_sell_id"])
-
+                await discord_bot_sendtext(f"*{parity['symbol']}-{parity['interval']}* SELL SIGNAL!")
                 state = update_state_file_and_state(
                     file_name, 'pmax_bbands_bought', state, False)
                 state = update_state_file_and_state(

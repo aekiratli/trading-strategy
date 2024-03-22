@@ -1,4 +1,4 @@
-from utils import get_amount_to_buy, telegram_bot_sendtext, initialize_parities, initialize_state_files, read_state_file, update_state_file_and_state
+from utils import get_amount_to_buy, telegram_bot_sendtext, initialize_parities, initialize_state_files, read_state_file, update_state_file_and_state, discord_bot_sendtext
 import logging
 from logger import Logger
 import asyncio
@@ -50,6 +50,7 @@ async def rsi_trading(parity, state, file_name, logger, rsi_value, close, orders
             state = update_state_file_and_state(file_name, 'rsi_trading_sell_id', state, sell_id)
 
             await telegram_bot_sendtext(f"*simulation={is_simulation}-{parity['symbol']}-{parity['interval']} - RSI 21 - MARKET BUY* Price = {close}, Amount = {amount}, RSI = {rsi_value}%0A%0A * {parity['symbol']}-{parity['interval']} - RSI - LIMIT ORDER SELL* Price = {close * parity['rsi_trading_sell_percentage'] }, Amount = {amount}", True)
+            await discord_bot_sendtext(f"*{parity['symbol']}-{parity['interval']}* BUY SIGNAL!")
 
 
 
@@ -80,6 +81,7 @@ async def rsi_trading(parity, state, file_name, logger, rsi_value, close, orders
             await orders.complete_order(sell_id)
             await logger.save({"is_simulation": is_simulation, "zone": "sell", "price": close, "amount": amount, "quota": quota, "strategy": "rsi_trading"})
             await telegram_bot_sendtext(f"*simulation={is_simulation}-{parity['symbol']}-{parity['interval']} - RSI 21 - LIMIT SELL ORDER COMPLETED* Price = {close}, Amount = {amount}", True)
+            await discord_bot_sendtext(f"*{parity['symbol']}-{parity['interval']}* SELL SIGNAL!")
             state = update_state_file_and_state(file_name, 'rsi_trading_bought', state, False)
             state = update_state_file_and_state(file_name, 'rsi_trading_buy_price', state, 0)
             state = update_state_file_and_state(file_name, 'rsi_trading_bought_amount', state, 0)
@@ -126,6 +128,7 @@ async def rsi_trading_alt(parity, state, file_name, logger, rsi_value, close, or
             await logger.save({"is_simulation": is_simulation, "zone": "buy", "price": close, "amount": amount, "quota": quota,  "strategy": "rsi_trading_alt"})
 
             await telegram_bot_sendtext(f"*simulation={is_simulation}-{parity['symbol']}-{parity['interval']} - RSI 26 - MARKET BUY* Price = {close}, Amount = {amount}, RSI = {rsi_value}%0A%0A *{parity['symbol']}-{parity['interval']} - RSI ALT - LIMIT ORDER SELL* Price = {close * parity['rsi_trading_sell_percentage']}, Amount = {amount}", True)
+            await discord_bot_sendtext(f"*{parity['symbol']}-{parity['interval']}* BUY SIGNAL!")
 
             
         if close >= state["rsi_trading_alt_buy_price"] * parity["rsi_trading_alt_sell_percentage"] and state["rsi_trading_alt_bought"] == True:
@@ -157,6 +160,7 @@ async def rsi_trading_alt(parity, state, file_name, logger, rsi_value, close, or
                 await orders.complete_order(sell_id)
                 await logger.save({"is_simulation": is_simulation, "zone": "sell", "price": close, "amount": amount, "quota": quota, "strategy": "rsi_trading_alt"})
                 await telegram_bot_sendtext(f"*simulation={is_simulation}-{parity['symbol']}-{parity['interval']} - RSI 26 - LIMIT SELL ORDER COMPLETED* Price = {close}, Amount = {amount}", True)
+                await discord_bot_sendtext(f"*{parity['symbol']}-{parity['interval']}* SELL SIGNAL!")
                 state = update_state_file_and_state(file_name, 'rsi_trading_alt_bought', state, False)
                 state = update_state_file_and_state(file_name, 'rsi_trading_alt_buy_price', state, 0)
                 state = update_state_file_and_state(file_name, 'rsi_trading_alt_bought_amount', state, 0)

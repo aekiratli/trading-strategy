@@ -1,4 +1,4 @@
-from utils import telegram_bot_sendtext, initialize_parities, initialize_state_files, read_state_file, update_state_file_and_state
+from utils import telegram_bot_sendtext, initialize_parities, initialize_state_files, read_state_file, update_state_file_and_state, discord_bot_sendtext
 import logging
 from logger import Logger
 import asyncio
@@ -70,6 +70,7 @@ async def rsi_bbands_alt(parity, state, file_name, logger, lowerband, rsi_value,
 
             await logger.save({"is_simulation": is_simulation, "zone":"buy","bbands": lowerband, "rsi": rsi_value, "price": close, "amount": amount, "quota": quota,  "strategy": "rsi_bbands_alt"})
             await telegram_bot_sendtext(f"*simulation={is_simulation}-{parity['symbol']}-{parity['interval']} - RSI-BBANDS-26 - MARKET BUY ORDER COMPLETED* Buy Price = {close}, Amount = {amount}%0A%0A * {parity['symbol']}-{parity['interval']} - RSI-BBANDS-26 - LIMIT SELL ORDER * Sell Price = {sell_price}, Amount = {amount}", True)
+            await discord_bot_sendtext(f"*{parity['symbol']}-{parity['interval']}* BUY SIGNAL!")
             state = update_state_file_and_state(file_name, 'rsi_bbands_alt_bought', state, True)
             state = update_state_file_and_state(file_name, 'rsi_bbands_alt_buy_id', state, "")
                 
@@ -100,6 +101,7 @@ async def rsi_bbands_alt(parity, state, file_name, logger, lowerband, rsi_value,
                 amount = state["rsi_bbands_alt_bought_amount"]
                 await logger.save({"is_simulation": is_simulation, "zone":"sell", "bbands": lowerband, "rsi": rsi_value, "price": close, "amount": amount, "quota": quota,  "strategy": "rsi_bbands_alt"})
                 await telegram_bot_sendtext(f"*simulation={is_simulation}-{parity['symbol']}-{parity['interval']} - RSI-BBANDS-26 - LIMIT SELL ORDER COMPLETED* Sell Price = {close}, Amount = {amount}", True)
+                await discord_bot_sendtext(f"*{parity['symbol']}-{parity['interval']}* SELL SIGNAL!")
                 await orders.complete_order(state["rsi_bbands_alt_sell_id"])
                 state = update_state_file_and_state(file_name, 'rsi_bbands_alt_bought', state, False)
                 state = update_state_file_and_state(file_name, 'rsi_bbands_alt_bought_amount', state, 0)
@@ -140,7 +142,7 @@ async def rsi_bbands(parity, state, file_name, logger, lowerband, rsi_value, clo
             #state = update_state_file_and_state(file_name, 'rsi_bbands_buy_id', state, buy_id)
             #state = update_state_file_and_state(file_name, 'rsi_bbands_buy_orderId', state, orderId)
 
-            await telegram_bot_sendtext(f"*simulation={is_simulation}-{parity['symbol']}-{parity['interval']} - RSI-BBANDS-21 - LIMIT BUY ORDER* Buy Price = {buy_price}, Amount = {amount}", True)
+            #await telegram_bot_sendtext(f"*simulation={is_simulation}-{parity['symbol']}-{parity['interval']} - RSI-BBANDS-21 - LIMIT BUY ORDER* Buy Price = {buy_price}, Amount = {amount}", True)
 
             state = update_state_file_and_state(file_name, 'rsi_bbands_bought_amount', state, amount)
             state = update_state_file_and_state(file_name, 'rsi_bbands_buy_price', state, buy_price)
@@ -170,6 +172,7 @@ async def rsi_bbands(parity, state, file_name, logger, lowerband, rsi_value, clo
 
             await logger.save({"is_simulation": is_simulation, "zone":"buy", "bbands": lowerband, "rsi": rsi_value, "price": close, "amount": amount, "quota": quota,  "strategy": "rsi_bbands"})
             await telegram_bot_sendtext(f"*simulation={is_simulation}-{parity['symbol']}-{parity['interval']} - RSI-BBANDS-21 - MARKET BUY ORDER COMPLETED* Buy Price = {close}, Amount = {amount}%0A%0A *{parity['symbol']}-{parity['interval']} - RSI-BBANDS - LIMIT SELL ORDER* Sell Price = {sell_price}, Amount = {amount}", True)
+            await discord_bot_sendtext(f"*{parity['symbol']}-{parity['interval']}* BUY SIGNAL!")
             state = update_state_file_and_state(file_name, 'rsi_bbands_bought', state, True)
 
 
@@ -198,6 +201,7 @@ async def rsi_bbands(parity, state, file_name, logger, lowerband, rsi_value, clo
             amount = state["rsi_bbands_bought_amount"]
             await logger.save({"is_simulation": is_simulation, "zone":"sell","bbands": lowerband, "rsi": rsi_value, "price": close, "amount": amount, "quota": quota,  "strategy": "rsi_bbands"})
             await telegram_bot_sendtext(f"*simulation={is_simulation}-{parity['symbol']}-{parity['interval']} - RSI-BBANDS - LIMIT SELL ORDER COMPLETED * Sell Price = {close}, Amount = {amount}", True)
+            await discord_bot_sendtext(f"*{parity['symbol']}-{parity['interval']}* SELL SIGNAL!")
             await orders.complete_order(state["rsi_bbands_sell_id"])
             state = update_state_file_and_state(file_name, 'rsi_bbands_bought', state, False)
             state = update_state_file_and_state(file_name, 'rsi_bbands_bought_amount', state, 0)
