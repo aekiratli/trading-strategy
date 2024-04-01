@@ -58,7 +58,7 @@ async def rsi_bbands_alt(parity, state, file_name, logger, lowerband, rsi_value,
 
             buy_id = str(uuid.uuid4())
             await orders.create_order(amount, buy_price, "buy", 'rsi_bbands_alt', 'market', buy_id,is_simulation)
-            await orders.complete_order(state["buy_id"])
+            await orders.complete_order(state["rsi_bbands_alt_buy_id"])
             await asyncio.sleep(1)
 
             sell_price = state["rsi_bbands_alt_sell_price"]
