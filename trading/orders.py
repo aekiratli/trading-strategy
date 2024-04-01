@@ -88,6 +88,17 @@ class Orders:
                     existing_data.append(f'{self.parity["symbol"]}{self.parity["interval"]}_{strategy}')
                     with open(f'{self.state_path}/active_trades.json', 'w') as file:
                         json.dump(existing_data, file, indent=2)
+                else:    
+                    with open(f'{self.state_path}/active_trades.json', 'r') as file:
+                        active_trades = json.load(file)
+                        try:
+                            active_trades.remove(f'{self.parity["symbol"]}{self.parity["interval"]}_{order["strategy"]}')
+                            with open(f'{self.state_path}/active_trades.json', 'w') as file:
+                                json.dump(active_trades, file, indent=2)
+                        except ValueError:
+                            pass
+                        except Exception as e:
+                            raise e
                 order = await self.client.create_order(**order_data)
         except Exception as e:
             await telegram_bot_sendtext(f"*{self.parity['symbol']}-{self.parity['interval']} - {strategy} - Order creation failed.* due to the : {e}", True)
