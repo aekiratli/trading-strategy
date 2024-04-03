@@ -215,26 +215,28 @@ async def main(df, parity, file_name, state, rsi_states):
                             msg = f"🟥🟥📉 *{parity['symbol']} - {parity['interval']}* Price = {float(df.iloc[-1]['close']):.2f} is lower than Bollinger Band - Lower Band = {lowerband.iloc[-1]:.2f} 🟥🟥📉"
                             await telegram_bot_sendtext(msg)
                             #await discord_bot_sendtext(msg)
-            # Trading strategies
-            close = float(df.iloc[-1]['close'])
-            # round close to 4 decimal places
-            close = round(close, 4)
-            rsi_value = rsi.iloc[-1]
-            lowerband = lowerband.iloc[-1]
-            zone = pmax_df.iloc[-1,-1]
+
             if not is_intervened:
-                tasks = [
-                    pmax_bbands(parity, state, file_name, logger, zone, lowerband, pmax, close, orders, client),
-                    rsi_bbands(parity, state, file_name, logger, lowerband, rsi_value, close, orders, client),
-                    rsi_bbands_alt(parity, state, file_name, logger, lowerband, rsi_value, close, orders, client),
-                    rsi_trading(parity, state, file_name, logger, rsi_value, close, orders, client),
-                    rsi_trading_alt(parity, state, file_name, logger, rsi_value, close, orders, client)
-                ]
-                results = await asyncio.gather(*tasks)
-                # Update state based on results
-                for result in results:
-                    if result is not None:
-                        state.update(result)
+                if parity['stop_sim_all'] == False:
+                    # Trading strategies
+                    close = float(df.iloc[-1]['close'])
+                    # round close to 4 decimal places
+                    close = round(close, 4)
+                    rsi_value = rsi.iloc[-1]
+                    lowerband = lowerband.iloc[-1]
+                    zone = pmax_df.iloc[-1,-1]
+                    tasks = [
+                        pmax_bbands(parity, state, file_name, logger, zone, lowerband, pmax, close, orders, client),
+                        rsi_bbands(parity, state, file_name, logger, lowerband, rsi_value, close, orders, client),
+                        rsi_bbands_alt(parity, state, file_name, logger, lowerband, rsi_value, close, orders, client),
+                        rsi_trading(parity, state, file_name, logger, rsi_value, close, orders, client),
+                        rsi_trading_alt(parity, state, file_name, logger, rsi_value, close, orders, client)
+                    ]
+                    results = await asyncio.gather(*tasks)
+                    # Update state based on results
+                    for result in results:
+                        if result is not None:
+                            state.update(result)
 
 async def run_parities():
 
